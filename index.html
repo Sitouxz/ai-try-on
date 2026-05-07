@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Photobooth</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Landing Screen -->
+    <div id="stepLanding" class="landing-screen">
+        <video class="landing-video" autoplay muted loop playsinline>
+            <source src="assets/background.mp4" type="video/mp4">
+        </video>
+        <div class="landing-overlay"></div>
+        <div class="landing-content">
+
+            <p class="landing-subtitle">Select your preferred way to get started</p>
+            <div class="landing-cards">
+                <div class="landing-card" id="manualTryOnBtn">
+                    <img src="assets/manual.png" alt="Manual Try-On icon">
+                    <span>Manual Try-On</span>
+                </div>
+                <div class="landing-card" id="aiGuideBtn">
+                    <img src="assets/ai-guide.png" alt="Let AI Guide You icon">
+                    <span>Let AI Guide You</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Flow (hidden until mode is chosen) -->
+    <div id="appContainer" class="app-hidden">
+
+        <!-- AI Guide Speech Dialog — shows current step guidance, auto-closes when agent finishes -->
+        <div id="aiSpeechDialog" class="ai-speech-dialog" style="display:none" role="dialog" aria-modal="false">
+            <h3 id="aiSpeechTitle" class="ai-speech-title"></h3>
+            <p id="aiSpeechBody" class="ai-speech-body"></p>
+            <div class="ai-speech-footer">
+                <div class="ai-speech-dots">
+                    <span></span><span></span><span></span>
+                </div>
+                <button id="aiSpeechOk" class="ai-speech-ok">OK</button>
+            </div>
+        </div>
+
+        <!-- AI Guide Avatar — shown when ElevenLabs agent is speaking -->
+        <div id="aiAvatarContainer" class="ai-avatar-container" aria-hidden="true">
+            <img id="aiAvatarImg" class="ai-avatar-img" src="assets/avatar.png" alt="AI Guide">
+            <div class="ai-avatar-pulse"></div>
+        </div>
+
+        <div class="container">
+
+            <main>
+                <!-- Step 1: Camera Capture -->
+                <div id="step1" class="camera-page">
+                    <h2 class="camera-page-title" id="cameraModeTitle">Manual Try-On</h2>
+                    
+                    <!-- Left Sidebar (hidden initially, shown after capture) -->
+                    <div class="outfit-sidebar" id="outfitSidebar" style="display:none">
+                        <!-- Gender Tabs -->
+                        <div class="gender-tabs">
+                            <button class="gender-tab active" data-gender="woman">WOMAN</button>
+                            <button class="gender-tab" data-gender="men">MEN</button>
+                            <button class="gender-tab" data-gender="upload">UPLOAD</button>
+                        </div>
+                        
+                        <!-- Category Filters (hidden for UPLOAD) -->
+                        <div class="category-filters" id="categoryFilters">
+                            <button class="category-filter active" data-category="top">TOP</button>
+                            <button class="category-filter" data-category="bottom">BOTTOM</button>
+                        </div>
+                        
+                        <!-- Upload Area (shown only for UPLOAD tab) -->
+                        <div class="upload-area" id="uploadArea" style="display:none">
+                            <div class="upload-dropzone" id="uploadDropzone">
+                                <div class="upload-icon">📁</div>
+                                <p class="upload-text">Drag & drop your outfit image here</p>
+                                <p class="upload-or">or</p>
+                                <button class="btn-upload" id="uploadButton">Choose File</button>
+                                <input type="file" id="uploadInput" accept="image/*" style="display:none">
+                            </div>
+                        </div>
+                        
+                        <!-- Outfit Grid -->
+                        <div class="sidebar-outfit-grid" id="sidebarOutfitGrid">
+                            <div class="loading-message">Loading outfits...</div>
+                        </div>
+                        
+                        <!-- Try On Button -->
+                        <button id="tryOnBtn" class="btn btn-primary try-on-btn" disabled>
+                            <span>🎨</span> TRY ON
+                        </button>
+                    </div>
+                    
+                    <!-- Main Camera/Preview Area -->
+                    <div class="camera-stage">
+                        <div class="camera-card" id="cameraWrapper">
+                            <video id="cameraVideo" autoplay playsinline muted></video>
+                            <div class="camera-hint" id="cameraHint">Stand within the frame...</div>
+                            <div class="countdown-overlay" id="countdownOverlay" style="display:none">
+                                <div class="countdown-circle">
+                                    <div class="countdown-number" id="countdownNumber">3</div>
+                                </div>
+                                <div class="countdown-text">Counting down...</div>
+                            </div>
+                        </div>
+                        <div class="captured-card" id="capturedPreview" style="display:none">
+                            <img id="capturedImg" alt="Captured photo">
+                            <div class="loading-overlay" id="loadingOverlay" style="display:none">
+                                <div class="loading-spinner"></div>
+                                <p class="loading-text">Fitting your look...</p>
+                            </div>
+                        </div>
+                        <button id="captureBtn" class="btn-capture-circle">
+                            <img src="assets/capture.png" alt="Capture">
+                        </button>
+                        <button id="retakeBtn" class="btn-retake-circle" style="display:none">
+                            <img src="assets/capture.png" alt="Retake">
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Outfit Selection -->
+                <div id="step2" class="step-container" style="display:none">
+                    <div class="step-header">
+                        <h2>Choose Your Outfit</h2>
+                        <p>Select an outfit for your AI-generated photo</p>
+                    </div>
+                    <div class="outfit-section">
+                        <div class="person-thumbnail">
+                            <img id="personThumb" alt="Your photo">
+                            <div class="thumb-label">Your Photo</div>
+                        </div>
+                        <div class="outfit-grid" id="outfitGrid">
+                            <div class="loading-message">Loading outfits...</div>
+                        </div>
+                    </div>
+                    <div class="outfit-controls">
+                        <button id="backToCameraBtn" class="btn btn-ghost">&larr; Retake Photo</button>
+                        <button id="generateBtn" class="btn btn-primary" disabled>Generate My Photo &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Processing -->
+                <div id="step3" class="camera-page" style="display:none">
+                    <h2 class="camera-page-title">Manual Try-On</h2>
+                    
+                    <div class="processing-photo-container">
+                        <img id="processingImg" class="processing-photo" alt="Your photo">
+                        <div class="processing-overlay">
+                            <div class="processing-orb">
+                                <div class="orb-ring orb-ring-1"></div>
+                                <div class="orb-ring orb-ring-2"></div>
+                                <div class="orb-core">AI</div>
+                            </div>
+                            <p class="processing-text">Fitting your look...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step AI: Color Analysis Results -->
+                <div id="stepAi" class="camera-page ai-results-page" style="display:none">
+                    <h2 class="camera-page-title">Your Color Analysis</h2>
+
+                    <div class="ai-results-layout">
+                        <!-- Left: user photo + summary -->
+                        <aside class="ai-results-side">
+                            <div class="ai-photo-card">
+                                <img id="aiPersonThumb" alt="Your photo">
+                            </div>
+                            <div class="ai-summary-card">
+                                <div class="ai-meta">
+                                    <div><span class="ai-meta-label">Season</span><span id="aiSeason" class="ai-meta-value">—</span></div>
+                                    <div><span class="ai-meta-label">Undertone</span><span id="aiUndertone" class="ai-meta-value">—</span></div>
+                                    <div><span class="ai-meta-label">Contrast</span><span id="aiContrast" class="ai-meta-value">—</span></div>
+                                </div>
+                                <p id="aiSummary" class="ai-summary-text"></p>
+                            </div>
+                            <div class="ai-results-actions">
+                                <button id="aiHomeBtn" class="btn btn-ghost">&larr; Home</button>
+                                <button id="aiRetakeBtn" class="btn btn-ghost">Retake</button>
+                                <button id="aiTryOnBtn" class="btn btn-primary">Try on an outfit &rarr;</button>
+                            </div>
+                        </aside>
+
+                        <!-- Right: recommendations -->
+                        <section class="ai-results-main">
+                            <div class="ai-section">
+                                <h3 class="ai-section-title">Your Color Palette</h3>
+                                <div id="aiPalette" class="ai-palette"></div>
+                            </div>
+
+                            <div class="ai-section ai-section-avoid" id="aiAvoidSection" style="display:none">
+                                <h3 class="ai-section-title">Colors to Avoid</h3>
+                                <div id="aiAvoidColors" class="ai-palette ai-palette-small"></div>
+                            </div>
+
+                            <div class="ai-section">
+                                <h3 class="ai-section-title">Outfit Recommendations</h3>
+                                <ul id="aiOutfits" class="ai-recommend-list"></ul>
+                            </div>
+
+                            <div class="ai-section">
+                                <h3 class="ai-section-title">Accessory Recommendations</h3>
+                                <ul id="aiAccessories" class="ai-recommend-list"></ul>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- Step 4: Result -->
+                <div id="step4" class="camera-page" style="display:none">
+                    <h2 class="camera-page-title">Manual Try-On</h2>
+                    
+                    <div class="result-layout">
+                        <!-- Left Action Buttons -->
+                        <div class="result-actions-left">
+                            <button id="homeBtn" class="action-btn" title="Back to Home">
+                                <img src="assets/home.png" alt="Home">
+                            </button>
+                            <button id="rechooseBtn" class="action-btn" title="Re-choose Outfit">
+                                <img src="assets/replace.png" alt="Replace">
+                            </button>
+                            <button id="downloadBtn" class="action-btn" title="Download Photo">
+                                <img src="assets/download.png" alt="Download">
+                            </button>
+                        </div>
+                        
+                        <!-- Result Photo -->
+                        <div class="camera-stage">
+                            <div class="result-card">
+                                <img id="resultImage" alt="Generated AI photo">
+                            </div>
+                            <p class="result-message">Your photo is ready!</p>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Fullscreen Modal -->
+    <div id="fullscreenModal" class="modal" style="display:none">
+        <div class="modal-backdrop" id="modalBackdrop"></div>
+        <div class="modal-inner">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <img id="fullscreenImage" alt="Fullscreen view">
+        </div>
+    </div>
+
+    <!-- QR Code Download Modal -->
+    <div id="qrModal" class="modal" style="display:none">
+        <div class="modal-backdrop" id="qrBackdrop"></div>
+        <div class="qr-modal-content">
+            <button class="modal-close" id="closeQrModal">&times;</button>
+            <h3 class="qr-title">Scan to Download</h3>
+            <p class="qr-subtitle">Scan this QR code with your mobile device to download your photo</p>
+            <div id="qrCodeContainer" class="qr-code-container"></div>
+            <button id="directDownloadBtn" class="btn btn-primary" style="margin-top: 20px;">Download Directly</button>
+        </div>
+    </div>
+     <script src="config.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="script.js"></script>
+    <script src="ai-guide.js"></script>
+</body>
+</html>

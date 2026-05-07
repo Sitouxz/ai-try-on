@@ -1,0 +1,55 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# testing
+coverage/
+.nyc_output/
+
+# next.js
+.next/
+out/
+build/
+dist/
+
+# production
+*.tsbuildinfo
+next-env.d.ts
+
+# env
+.env
+.env*.local
+!.env.example
+
+# misc
+.DS_Store
+*.pem
+.vercel
+.turbo
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Prisma generated client
+web/src/generated/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# OS
+Thumbs.db
+
+# Excluded subprojects (archived reference only)
+_archive-color-analysis/

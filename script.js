@@ -399,30 +399,36 @@ class PhotoboothApp {
     }
 
     async scanFolder(folderPath) {
-        const outfits = [];
-        const commonImages = [
-            'image 1.png', 'image 2.png', 'image 3.png', 'image 4.png', 
-            'image 5.png', 'image 6.png', 'image 7.png', 'image 8.png',
-            'image 9.png', 'image 10.png', 'image 11.png', 'image 12.png'
-        ];
+        const folder = folderPath.replace(/^assets\//, '').replace(/\/$/, '');
 
-        console.log(`[scanFolder] Scanning: ${folderPath}`);
-
-        for (const imageName of commonImages) {
-            const encodedImageName = encodeURIComponent(imageName);
-            const url = `${folderPath}${encodedImageName}`;
+        // When served via Express, use the server API (fast, exact)
+        if (window.location.protocol !== 'file:') {
             try {
-                const response = await fetch(url, { method: 'HEAD' });
-                if (response.ok) {
-                    outfits.push({ url, filename: imageName });
-                    console.log(`[scanFolder] Found: ${url}`);
+                const res = await fetch(`/api/assets/list?folder=${encodeURIComponent(folder)}`);
+                if (res.ok) {
+                    const { images } = await res.json();
+                    console.log(`[scanFolder] API: ${images.length} images in ${folder}`);
+                    return images.map(filename => ({
+                        filename,
+                        url: `assets/${folder}/${encodeURIComponent(filename)}`,
+                    }));
                 }
             } catch (err) {
-                // Silent fail - file doesn't exist
+                console.warn('[scanFolder] API failed, falling back to image probe:', err);
             }
         }
-        
-        console.log(`[scanFolder] Total outfits found: ${outfits.length}`);
+
+        // Fallback: probe via Image load — works from file:// (no CORS restriction on img src)
+        const candidates = Array.from({ length: 20 }, (_, i) => `image ${i + 1}.png`);
+        const results = await Promise.all(candidates.map(filename => new Promise(resolve => {
+            const img = new Image();
+            const url = `assets/${folder}/${encodeURIComponent(filename)}`;
+            img.onload  = () => resolve({ filename, url });
+            img.onerror = () => resolve(null);
+            img.src = url;
+        })));
+        const outfits = results.filter(Boolean);
+        console.log(`[scanFolder] Image probe: ${outfits.length} images in ${folder}`);
         return outfits;
     }
 

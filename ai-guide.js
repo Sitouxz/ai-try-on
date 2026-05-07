@@ -1,8 +1,8 @@
-// AI Guide — color analysis flow + ElevenLabs active voice guide.
+// AI Guide — color analysis flow + Akool streaming avatar voice guide.
 // Augments the PhotoboothApp class (see script.js) with the methods required for
-// the "Let AI Guide You" mode: sends the captured photo to /api/analyze, renders
-// the resulting palette + outfit + accessory recommendations, and drives an
-// ElevenLabs Conversational AI session that speaks proactively at every step.
+// the "Let AI Guide You" mode: sends the captured photo to Gemini for color analysis,
+// renders the resulting palette + outfit + accessory recommendations, and instructs
+// the Akool streaming avatar to speak at each step.
 
 (function () {
     if (typeof PhotoboothApp === 'undefined') {
@@ -12,343 +12,33 @@
 
     const proto = PhotoboothApp.prototype;
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ElevenLabs Active Voice Guide
-    // Uses @11labs/client SDK to start a new conversation session at each step,
-    // making the agent speak proactively with a custom firstMessage for that step.
-    // ════════════════════════════════════════════════════════════════════════
-    class ElevenLabsGuide {
-        constructor(agentId) {
-            this.agentId = agentId;
-            this.conversation = null;
-            this._ending = false;   // guard against overlapping end/start
-            this._pendingStep = null;
-            this._disconnectResolve = null;
-            this._loadSdk();
-        }
+    // ── Akool step prompts ─────────────────────────────────────────────────────
+    const STEP_PROMPTS = {
+        camera: 'Please greet the user warmly and tell them to stand in the center of the frame, look straight at the camera, and press the capture button when they are ready.',
+        analyzing: 'Tell the user their photo looks great and that you are now analyzing their skin tone, undertone, and contrast. Ask them to hang tight for just a moment.',
+        aiOutfit: 'Tell the user their color analysis is complete and you have curated outfits that will complement their personal palette. Encourage them to browse the recommendations and select one to try on.',
+        result: 'Tell the user their virtual try-on looks amazing! Remind them they can download the photo, try a different outfit, or start a new color analysis.',
+    };
 
-        // ── Step messages ──────────────────────────────────────────────────
-        static MESSAGES = {
-            landing: `Hi there! Welcome to the AI Color Stylist photobooth. \
-I'll guide you through a quick color analysis and help you find outfits that flatter you perfectly. \
-When you're ready, tap the "Let AI Guide You" button to begin!`,
-            camera: `Great! Let's take your photo. Stand in the center of the frame, \
-look straight at the camera, and press the capture button when you're ready.`,
-            analyzing: `Perfect shot! Now I'm analyzing your skin tone, undertone, and contrast. \
-This will just take a few seconds — hang tight!`,
-            results: null,           // built dynamically with real analysis data
-            aiOutfit: `Based on your color analysis, I've curated outfits that will look amazing on you! \
-You can adjust your skin tone and browse different seasonal palettes. \
-Select an outfit you like and tap Try On to see how it looks.`,
-            tryOn: `Now let's find an outfit that matches your palette! \
-Browse the options on the left, tap one to select it, then press Try On.`,
-            result: `Amazing! Here's your virtual try-on result. \
-You can download it, try another outfit, or start over. Enjoy your new look!`,
-            goodbye: `Thanks for using the AI Color Stylist! \
-Feel free to come back anytime for a new color analysis. See you soon!`,
+    function buildResultsPrompt(analysis) {
+        const season = analysis?.season || 'a beautiful season';
+        const undertone = analysis?.undertone || '';
+        const top3 = (analysis?.palette || []).slice(0, 3).map(c => c.name).join(', ');
+        return `Tell the user their color analysis results are ready. Their personal color season is ${season}${undertone ? ` with a ${undertone} undertone` : ''}. ${top3 ? `Their top flattering colors are ${top3}.` : ''} Encourage them to scroll down to explore their full palette, outfit recommendations, and accessory suggestions, and invite them to ask any questions.`;
+    }
+
+    function akoolSpeak(step, analysis = null) {
+        const prompt = step === 'results' ? buildResultsPrompt(analysis) : STEP_PROMPTS[step];
+        if (!prompt) return;
+        let tries = 0;
+        const attempt = () => {
+            if (window.akoolAvatar?.running) {
+                window.akoolAvatar.speak(prompt);
+            } else if (tries++ < 20) {
+                setTimeout(attempt, 300);
+            }
         };
-
-        static buildResultsMessage(analysis) {
-            const season = analysis?.season || 'your season';
-            const undertone = analysis?.undertone || '';
-            const top3 = (analysis?.palette || [])
-                .slice(0, 3)
-                .map((c) => c.name)
-                .join(', ');
-            return `Your results are ready! You have a ${season} palette${undertone ? ` with a ${undertone} undertone` : ''}. \
-${top3 ? `Your top flattering colors are ${top3}.` : ''} \
-Scroll down to see your full palette, outfit ideas, and accessories. \
-You can ask me anything about your results!`;
-        }
-
-        // ── SDK loading (ESM via esm.sh — no UMD build exists for @11labs/client) ─
-        _loadSdk() {
-            if (this._sdkReady) return this._sdkReady;
-            this._sdkReady = import('https://esm.sh/@11labs/client')
-                .then((mod) => {
-                    this._ConversationClass = mod.Conversation;
-                    console.info('[ai-guide] @11labs/client loaded.');
-                })
-                .catch((err) => {
-                    console.warn('[ai-guide] Failed to load @11labs/client:', err);
-                });
-            return this._sdkReady;
-        }
-
-        async _getConversationClass() {
-            await this._loadSdk();
-            return this._ConversationClass || null;
-        }
-
-        // ── Session control ────────────────────────────────────────────────
-        async speakForStep(step, analysis = null) {
-            // If still tearing down the previous session, queue this step and return.
-            if (this._ending) {
-                this._pendingStep = { step, analysis };
-                return;
-            }
-
-            await this._endCurrent();
-
-            let firstMessage =
-                step === 'results'
-                    ? ElevenLabsGuide.buildResultsMessage(analysis)
-                    : ElevenLabsGuide.MESSAGES[step];
-
-            if (!firstMessage) return;
-
-            this._currentSide = 'right';
-            this._currentStep = step;
-            await this._startSession(firstMessage);
-        }
-
-        get _interactive() {
-            return window.PHOTOBOOTH_CONFIG?.ELEVENLABS_INTERACTIVE !== false;
-        }
-
-        async _requestMic() {
-            if (!this._interactive) return null;
-            if (this._micStream) return this._micStream;
-            try {
-                this._micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                console.info('[ai-guide] Microphone granted.');
-            } catch (err) {
-                console.warn('[ai-guide] Microphone denied — voice agent will be muted:', err);
-                this._micStream = null;
-            }
-            return this._micStream;
-        }
-
-        async _startSession(firstMessage) {
-            const Conversation = await this._getConversationClass();
-            if (!Conversation) {
-                console.warn('[ai-guide] ElevenLabs SDK unavailable — check network/CSP.');
-                return;
-            }
-            await this._requestMic();
-            console.info('[ai-guide] Starting session for agent:', this.agentId, '| interactive:', this._interactive, '| firstMessage:', firstMessage?.slice(0, 60));
-            try {
-                this._setStatus('connecting');
-                this._sessionStartedAt = Date.now();
-                this._serverRejected = false;
-                const sessionOverrides = this._interactive
-                    ? { agent: { firstMessage } }
-                    : {
-                        agent: { firstMessage },
-                        tts: {},
-                        agent_input: {
-                            user_input_audio_format: 'pcm_16000',
-                        },
-                        turn: {
-                            turn_timeout: 0,
-                            silence_end_call_timeout: 0,
-                            mode: 'manual',
-                        },
-                    };
-                this.conversation = await Conversation.startSession({
-                    agentId: this.agentId,
-                    overrides: sessionOverrides,
-                    onStatusChange: ({ status }) => {
-                        this._setStatus(status);
-                        if (status === 'connected') {
-                            this._showAvatar(this._currentSide || 'right');
-                            if (!this._interactive) {
-                                try { this.conversation.setInputVolume(0); } catch {}
-                            }
-                        }
-                    },
-                    onModeChange: ({ mode }) => {
-                        this._setMode(mode);
-                        const speaking = mode === 'speaking';
-                        this._setAvatarSpeaking(speaking);
-                        if (speaking) {
-                            this._showDialog(this._currentStep);
-                            this._setDialogSpeaking(true);
-                        } else {
-                            this._setDialogSpeaking(false);
-                            this._hideDialog();
-                            // In non-interactive mode, end session once AI finishes speaking.
-                            if (!this._interactive) {
-                                setTimeout(() => this._endCurrent(), 800);
-                            }
-                        }
-                    },
-                    onError: (msg, ctx) => {
-                        console.warn('[ai-guide] ElevenLabs error:', msg, ctx);
-                        this._setStatus('error');
-                        this._hideAvatar();
-                        this._hideDialog();
-                    },
-                    onDisconnect: () => {
-                        const sessionAge = Date.now() - (this._sessionStartedAt || 0);
-                        if (sessionAge < 2000) {
-                            console.warn('[ai-guide] Session rejected by server within', sessionAge, 'ms — check agent ID and "Allow overriding first message" setting in ElevenLabs dashboard.');
-                            this._serverRejected = true;
-                        }
-                        this._setStatus('disconnected');
-                        this._hideAvatar();
-                        this._hideDialog();
-                        this.conversation = null;
-                        if (this._disconnectResolve) {
-                            this._disconnectResolve();
-                            this._disconnectResolve = null;
-                        }
-                    },
-                });
-            } catch (err) {
-                console.warn('[ai-guide] Failed to start ElevenLabs session:', err);
-                this._setStatus('error');
-            }
-        }
-
-        async _endCurrent() {
-            if (!this.conversation) return;
-            // Wait if session is very fresh — audio worklet needs a moment to settle.
-            const age = Date.now() - (this._sessionStartedAt || 0);
-            if (age < 1200) {
-                await new Promise(r => setTimeout(r, 1200 - age));
-            }
-            // If already gone by now (e.g. server closed it), bail early.
-            if (!this.conversation) {
-                this._ending = false;
-                return;
-            }
-            this._ending = true;
-            // Build a promise that resolves when onDisconnect fires.
-            const disconnected = new Promise(r => { this._disconnectResolve = r; });
-            try {
-                await this.conversation.endSession();
-            } catch {
-                // ignore — socket may already be closed
-            }
-            // Wait for the WebSocket to fully close (onDisconnect), with a safety timeout.
-            await Promise.race([disconnected, new Promise(r => setTimeout(r, 3000))]);
-            this.conversation = null;
-            this._disconnectResolve = null;
-            this._ending = false;
-            this._setStatus('idle');
-            this._hideAvatar();
-            this._hideDialog();
-
-            // Flush any step that was queued while we were ending.
-            // Skip if the server rejected us (bad agent ID / config) to avoid loops.
-            if (this._pendingStep && !this._serverRejected) {
-                const { step, analysis } = this._pendingStep;
-                this._pendingStep = null;
-                await this.speakForStep(step, analysis);
-            } else {
-                this._pendingStep = null;
-            }
-        }
-
-        // ── Speech dialog ──────────────────────────────────────────────────
-        static DIALOG_CONTENT = {
-            landing:   { title: 'Welcome!',        body: 'I\'ll guide you through a color analysis and help you find flattering outfits. Tap "Let AI Guide You" to start!' },
-            camera:    { title: 'Take Your Photo', body: 'Stand in the center of the frame, look at the camera, and press the capture button.' },
-            analyzing: { title: 'Analyzing…',      body: 'Analyzing your skin tone, undertone, and contrast — just a moment!' },
-            results:   { title: 'Your Results!',   body: 'Here\'s your personal color analysis. Scroll to explore your palette, outfit ideas, and accessories.' },
-            aiOutfit:  { title: 'Pick Your Outfit', body: 'Based on your color analysis, I\'ve found outfits that will look amazing on you! Select your skin tone, browse by season, and tap an outfit to try it on.' },
-            tryOn:     { title: 'Try It On!',      body: 'Browse the outfit catalog on the left, tap one to select it, then press Try On.' },
-            result:    { title: 'Looking Great!',  body: 'Here\'s your virtual try-on! Download it, try another outfit, or start over.' },
-            goodbye:   { title: 'See You Soon!',   body: 'Thanks for using the AI Color Stylist. Come back anytime!' },
-        };
-
-        _showDialog(step) {
-            const el = document.getElementById('aiSpeechDialog');
-            const titleEl = document.getElementById('aiSpeechTitle');
-            const bodyEl  = document.getElementById('aiSpeechBody');
-            if (!el) return;
-
-            const content = ElevenLabsGuide.DIALOG_CONTENT[step] || { title: 'AI Guide', body: '' };
-            if (titleEl) titleEl.textContent = content.title;
-            if (bodyEl)  bodyEl.textContent  = content.body;
-
-            el.style.display = 'block';
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => el.classList.add('dialog-visible'));
-            });
-
-            // Wire OK button to close.
-            const ok = document.getElementById('aiSpeechOk');
-            if (ok) {
-                ok.onclick = () => this._hideDialog();
-            }
-        }
-
-        _hideDialog() {
-            const el = document.getElementById('aiSpeechDialog');
-            if (!el) return;
-            el.classList.remove('dialog-visible', 'dialog-speaking');
-            el.addEventListener('transitionend', () => {
-                if (!el.classList.contains('dialog-visible')) el.style.display = 'none';
-            }, { once: true });
-        }
-
-        _setDialogSpeaking(speaking) {
-            document.getElementById('aiSpeechDialog')?.classList.toggle('dialog-speaking', speaking);
-        }
-
-        // ── Avatar control ─────────────────────────────────────────────────
-        _showAvatar(side) {
-            const el = document.getElementById('aiAvatarContainer');
-            if (!el) return;
-            // Apply side class before making visible so there's no flash.
-            el.classList.remove('side-left', 'side-right');
-            el.classList.add(side === 'left' ? 'side-left' : 'side-right');
-            // Small rAF so the browser registers the class before transitioning.
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => el.classList.add('avatar-visible'));
-            });
-        }
-
-        _hideAvatar() {
-            const el = document.getElementById('aiAvatarContainer');
-            if (!el) return;
-            el.classList.remove('avatar-visible', 'avatar-speaking');
-        }
-
-        _setAvatarSpeaking(speaking) {
-            document.getElementById('aiAvatarContainer')?.classList.toggle('avatar-speaking', speaking);
-        }
-
-        _setStatus(status) {
-            console.info('[ai-guide] status:', status);
-        }
-
-        _setMode(mode) {
-            console.info('[ai-guide] mode:', mode);
-        }
-
-        // ── Avatar control ─────────────────────────────────────────────────
-        _showAvatar(side) {
-            const el = document.getElementById('aiAvatarContainer');
-            if (!el) return;
-            el.classList.remove('side-left', 'side-right');
-            el.classList.add(side === 'left' ? 'side-left' : 'side-right');
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => el.classList.add('avatar-visible'));
-            });
-        }
-
-        _hideAvatar() {
-            const el = document.getElementById('aiAvatarContainer');
-            if (!el) return;
-            el.classList.remove('avatar-visible', 'avatar-speaking');
-        }
-
-        _setAvatarSpeaking(speaking) {
-            document.getElementById('aiAvatarContainer')?.classList.toggle('avatar-speaking', speaking);
-        }
-    } // end class ElevenLabsGuide
-
-    // ── Singleton ──────────────────────────────────────────────────────────
-    let guide = null;
-
-    function getGuide() {
-        const agentId = window.PHOTOBOOTH_CONFIG?.ELEVENLABS_AGENT_ID;
-        if (!agentId) return null;
-        if (!guide) guide = new ElevenLabsGuide(agentId);
-        return guide;
+        attempt();
     }
 
     // ── Wrap app lifecycle methods to inject voice guidance ───────────────
@@ -356,20 +46,19 @@ You can ask me anything about your results!`;
     proto.showApp = function (mode) {
         _origShowApp.call(this, mode);
         if (mode === 'ai') {
-            setTimeout(() => getGuide()?.speakForStep('camera'), 1800);
+            setTimeout(() => akoolSpeak('camera'), 1800);
         }
     };
 
     const _origReturnToLanding = proto.returnToLanding;
     proto.returnToLanding = function () {
         _origReturnToLanding.call(this);
-        getGuide()?._endCurrent();
     };
 
     const _origShowResult = proto.showResult;
     proto.showResult = function (imageUrl) {
         _origShowResult.call(this, imageUrl);
-        getGuide()?.speakForStep('result');
+        akoolSpeak('result');
     };
 
     // ── AI analysis flow ──────────────────────────────────────────────────
@@ -379,21 +68,98 @@ You can ask me anything about your results!`;
         if (overlay) overlay.style.display = 'flex';
         if (overlayText) overlayText.textContent = 'Analyzing your colors…';
 
-        // Speak "analyzing" step.
-        getGuide()?.speakForStep('analyzing');
+        akoolSpeak('analyzing');
 
         try {
             const base64 = await this._dataUrlToBase64(this.capturedDataUrl);
-            const res = await fetch('/api/analyze', {
+            const cfg = window.PHOTOBOOTH_CONFIG;
+            const apiKey = cfg?.GEMINI_API_KEY;
+            if (!apiKey) throw new Error('GEMINI_API_KEY not set in config.js');
+            const model = cfg?.GEMINI_MODEL || 'gemini-2.5-flash';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imageBase64: base64, mimeType: 'image/jpeg' }),
+                body: JSON.stringify({
+                    systemInstruction: { parts: [{ text: `You are a professional personal-color and styling consultant.\nAnalyze the person in the photo and produce a personal color analysis along with\noutfit and accessory recommendations.\n\nRules:\n- Be concrete and concise. No greetings, no markdown.\n- Use realistic, specific color names ("warm camel", "soft sage") with accurate hex codes.\n- Outfit and accessory recommendations must complement the recommended palette.\n- If the photo is low quality, ambiguous, or shows no person, still respond, but say so\n  briefly in the "summary" field and give general best-guess recommendations.\n- Never refuse. Never ask follow-up questions.` }] },
+                    contents: [{
+                        role: 'user',
+                        parts: [
+                            { inlineData: { mimeType: 'image/jpeg', data: base64 } },
+                            { text: 'Analyze this person and return the structured color analysis + recommendations.' },
+                        ],
+                    }],
+                    generationConfig: {
+                        responseMimeType: 'application/json',
+                        temperature: 0.7,
+                        responseSchema: {
+                            type: 'object',
+                            properties: {
+                                season: { type: 'string' },
+                                undertone: { type: 'string' },
+                                skinTone: { type: 'string' },
+                                contrast: { type: 'string' },
+                                summary: { type: 'string' },
+                                palette: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            name: { type: 'string' },
+                                            hex: { type: 'string' },
+                                            note: { type: 'string' },
+                                        },
+                                        required: ['name', 'hex'],
+                                    },
+                                },
+                                avoidColors: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            name: { type: 'string' },
+                                            hex: { type: 'string' },
+                                        },
+                                        required: ['name', 'hex'],
+                                    },
+                                },
+                                outfits: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            title: { type: 'string' },
+                                            description: { type: 'string' },
+                                            occasion: { type: 'string' },
+                                        },
+                                        required: ['title', 'description'],
+                                    },
+                                },
+                                accessories: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            name: { type: 'string' },
+                                            description: { type: 'string' },
+                                        },
+                                        required: ['name', 'description'],
+                                    },
+                                },
+                            },
+                            required: ['season', 'undertone', 'summary', 'palette', 'outfits', 'accessories'],
+                        },
+                    },
+                }),
             });
             if (!res.ok) {
                 const errText = await res.text();
                 throw new Error(`Analysis failed (${res.status}): ${errText}`);
             }
-            const { analysis } = await res.json();
+            const json = await res.json();
+            const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error('Empty response from Gemini.');
+            const analysis = JSON.parse(text);
             if (!analysis) throw new Error('Empty analysis payload.');
             this.lastAnalysis = analysis;
             this.renderAiResults(analysis);
@@ -502,8 +268,7 @@ You can ask me anything about your results!`;
                 .join('');
         }
 
-        // Speak results step — after a short delay so the analyzing session has time to end.
-        setTimeout(() => getGuide()?.speakForStep('results', analysis), 800);
+        setTimeout(() => akoolSpeak('results', analysis), 800);
     };
 
     proto.showAiError = function (message) {
@@ -602,7 +367,7 @@ You can ask me anything about your results!`;
             this._aiOutfitListenersInitialized = true;
         }
 
-        getGuide()?.speakForStep('aiOutfit');
+        akoolSpeak('aiOutfit');
     };
 
     proto.renderColorAnalysis = function () {
@@ -811,14 +576,6 @@ You can ask me anything about your results!`;
         document
             .getElementById('aiTryOnBtn')
             ?.addEventListener('click', () => window.photoboothApp?.handoffToTryOn());
-
-        // Initialise guide after config is ready (pre-loads SDK + requests mic early).
-        const init = () => { getGuide(); };
-        if (window.PHOTOBOOTH_CONFIG_READY) {
-            window.PHOTOBOOTH_CONFIG_READY.then(init);
-        } else {
-            init();
-        }
     });
 
     // ── HTML escaping helpers ─────────────────────────────────────────────

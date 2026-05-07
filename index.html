@@ -33,21 +33,42 @@
     <!-- Main App Flow (hidden until mode is chosen) -->
     <div id="appContainer" class="app-hidden">
 
-        <!-- AI Guide Speech Dialog — shows current step guidance, auto-closes when agent finishes -->
-        <div id="aiSpeechDialog" class="ai-speech-dialog" style="display:none" role="dialog" aria-modal="false">
-            <h3 id="aiSpeechTitle" class="ai-speech-title"></h3>
-            <p id="aiSpeechBody" class="ai-speech-body"></p>
-            <div class="ai-speech-footer">
-                <div class="ai-speech-dots">
-                    <span></span><span></span><span></span>
-                </div>
-                <button id="aiSpeechOk" class="ai-speech-ok">OK</button>
-            </div>
-        </div>
-
-        <!-- AI Guide Avatar — shown when ElevenLabs agent is speaking -->
+        <!-- Akool Streaming Avatar — live video avatar blended into the UI -->
         <div id="aiAvatarContainer" class="ai-avatar-container" aria-hidden="true">
-            <img id="aiAvatarImg" class="ai-avatar-img" src="assets/avatar.png" alt="AI Guide">
+            <!-- Video feed from Akool/Agora (fills container, edges masked) -->
+            <div id="akoolVideoWrap" class="akool-video-wrap">
+                <div id="akoolRemoteVideo" class="akool-remote-video"></div>
+                <div class="akool-status-badge" id="akoolStatusBadge"></div>
+            </div>
+            <!-- Caption: speech card shown over the UI -->
+            <div id="akoolCaption" class="akool-caption">
+                <div id="akoolCaptionTitle" class="akool-caption-title">AI Guide</div>
+                <p id="akoolCaptionBody" class="akool-caption-body"></p>
+                <div class="akool-caption-footer">
+                    <button id="akoolCaptionOk" class="akool-caption-ok">OK</button>
+                </div>
+            </div>
+            <!-- Chat bar (mic, text, send, interrupt) -->
+            <div class="akool-chat-bar">
+                <button class="akool-btn akool-mic-btn" id="akoolMicBtn" title="Toggle mic">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+                <input class="akool-text-input" id="akoolTextInput" type="text" placeholder="Ask anything…" autocomplete="off">
+                <button class="akool-btn akool-send-btn" id="akoolSendBtn" title="Send">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+                <button class="akool-btn akool-interrupt-btn" id="akoolInterruptBtn" title="Interrupt">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                </button>
+            </div>
+            <!-- Floating mic indicator — always visible when session is live -->
+            <button id="akoolMicFloat" class="akool-mic-float" title="Mic active — tap to mute" aria-label="Microphone status">
+                <svg class="mic-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                <svg class="mic-icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                <span class="mic-pulse-ring"></span>
+            </button>
+            <!-- Fallback static avatar (shown when Akool is disabled/connecting) -->
+            <img id="aiAvatarImg" class="ai-avatar-img akool-avatar-fallback" src="assets/avatar.png" alt="AI Guide">
             <div class="ai-avatar-pulse"></div>
         </div>
 
@@ -331,7 +352,9 @@
      <script src="config.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/akool-streaming-avatar-sdk/dist/index.iife.js"></script>
     <script src="script.js"></script>
     <script src="ai-guide.js"></script>
+    <script src="akool-avatar.js"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readdir } from 'node:fs/promises';
 import 'dotenv/config';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -21,6 +22,13 @@ const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID || '';
 const ELEVENLABS_INTERACTIVE = process.env.ELEVENLABS_INTERACTIVE !== 'false';
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || '';
 
+const AKOOL_CLIENT_ID = process.env.AKOOL_CLIENT_ID || '';
+const AKOOL_CLIENT_SECRET = process.env.AKOOL_CLIENT_SECRET || '';
+const AKOOL_AVATAR_ID = process.env.AKOOL_AVATAR_ID || '8t73BxlZn1SctVieuErZE';
+const AKOOL_VOICE_ID = process.env.AKOOL_VOICE_ID || '6889b628662160e2caad5dbc';
+const AKOOL_SESSION_DURATION = Number(process.env.AKOOL_SESSION_DURATION) || 600;
+const AKOOL_BASE = 'https://openapi.akool.com';
+
 const app = express();
 app.use(express.json({ limit: '15mb' }));
 
@@ -30,7 +38,79 @@ app.get('/api/config', (_req, res) => {
     elevenLabsAgentId: ELEVENLABS_AGENT_ID,
     elevenLabsInteractive: ELEVENLABS_INTERACTIVE,
     n8nWebhookUrl: N8N_WEBHOOK_URL,
+    akoolEnabled: !!(AKOOL_CLIENT_ID && AKOOL_CLIENT_SECRET),
+    akoolVoiceId: AKOOL_VOICE_ID,
   });
+});
+
+// ── Akool helpers ─────────────────────────────────────────────────────────────
+let _akoolToken = null;
+let _akoolTokenExp = 0;
+
+async function getAkoolToken() {
+  if (_akoolToken && Date.now() < _akoolTokenExp) return _akoolToken;
+  const res = await fetch(`${AKOOL_BASE}/api/open/v3/getToken`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientId: AKOOL_CLIENT_ID, clientSecret: AKOOL_CLIENT_SECRET }),
+  });
+  if (!res.ok) throw new Error(`Akool getToken failed: ${res.status}`);
+  const json = await res.json();
+  if (!json.token) throw new Error(`Akool getToken no token in response: ${JSON.stringify(json)}`);
+  _akoolToken = json.token;
+  _akoolTokenExp = Date.now() + 55 * 60 * 1000; // tokens last ~1 h; refresh 5 min early
+  return _akoolToken;
+}
+
+async function akoolRequest(path, method, body) {
+  const token = await getAkoolToken();
+  const res = await fetch(`${AKOOL_BASE}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Akool API ${path} => ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+// ── Akool session proxy routes ────────────────────────────────────────────────
+app.post('/api/akool/session/create', async (_req, res) => {
+  if (!AKOOL_CLIENT_ID || !AKOOL_CLIENT_SECRET) {
+    return res.status(503).json({ error: 'Akool credentials not configured on server.' });
+  }
+  try {
+    const data = await akoolRequest('/api/open/v4/liveAvatar/session/create', 'POST', {
+      avatar_id: AKOOL_AVATAR_ID,
+      voice_id: AKOOL_VOICE_ID,
+      duration: AKOOL_SESSION_DURATION,
+    });
+    console.info('[akool] session/create response keys:', JSON.stringify(Object.keys(data?.data || {})));
+    res.json(data);
+  } catch (err) {
+    console.error('[akool] session/create error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/akool/session/close', async (req, res) => {
+  if (!AKOOL_CLIENT_ID || !AKOOL_CLIENT_SECRET) {
+    return res.status(503).json({ error: 'Akool credentials not configured on server.' });
+  }
+  try {
+    const { id } = req.body || {};
+    if (!id) return res.status(400).json({ error: 'Missing session id.' });
+    const data = await akoolRequest('/api/open/v4/liveAvatar/session/close', 'POST', { id });
+    res.json(data);
+  } catch (err) {
+    console.error('[akool] session/close error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── Color analysis + recommendations ─────────────────────────────────────────
@@ -224,6 +304,28 @@ app.post('/api/analyze', async (req, res) => {
   }
 });
 
+// ── Asset folder listing ──────────────────────────────────────────────────────
+// Returns sorted list of image filenames inside assets/<gender>/<category>/
+// Used by the frontend scanFolder to avoid slow HEAD-probing.
+app.get('/api/assets/list', async (req, res) => {
+  const { folder } = req.query; // e.g. "woman/top"
+  if (!folder || /\.\./.test(folder)) return res.status(400).json({ error: 'Invalid folder.' });
+  const dir = path.join(__dirname, 'assets', folder);
+  try {
+    const entries = await readdir(dir);
+    const images = entries
+      .filter(f => /\.(png|jpe?g|webp)$/i.test(f))
+      .sort((a, b) => {
+        const na = parseInt(a.match(/\d+/)?.[0] ?? '0', 10);
+        const nb = parseInt(b.match(/\d+/)?.[0] ?? '0', 10);
+        return na - nb;
+      });
+    res.json({ images });
+  } catch {
+    res.json({ images: [] }); // empty folder or not found → return empty, not 404
+  }
+});
+
 // ── Static frontend ──────────────────────────────────────────────────────────
 app.get('/favicon.ico', (_, res) => res.status(204).end());
 app.use(express.static(__dirname, { extensions: ['html'] }));
@@ -235,5 +337,10 @@ app.listen(PORT, () => {
   }
   if (!ELEVENLABS_AGENT_ID) {
     console.warn('[warn] ELEVENLABS_AGENT_ID not set — voice agent will be disabled in the UI.');
+  }
+  if (!AKOOL_CLIENT_ID || !AKOOL_CLIENT_SECRET) {
+    console.warn('[warn] AKOOL_CLIENT_ID / AKOOL_CLIENT_SECRET not set — streaming avatar will be disabled.');
+  } else {
+    console.info(`[akool] Streaming avatar enabled. avatar_id=${AKOOL_AVATAR_ID} voice_id=${AKOOL_VOICE_ID}`);
   }
 });

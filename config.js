@@ -1,35 +1,31 @@
-// Photobooth Configuration
-// Defaults are defined here; values from the server (/api/config) take precedence
-// at runtime so deployments can override them via .env without editing this file.
+// Photobooth Configuration — static deployment, all values set here.
+// Edit this file to configure credentials and endpoints.
 window.PHOTOBOOTH_CONFIG = {
-    // n8n webhook URL — receives personImage + outfitImage as multipart/form-data.
-    // Expected response: JSON with { imageUrl: "..." } or a raw image binary.
+    // n8n webhook URL for manual try-on outfit swap
     N8N_WEBHOOK_URL: 'https://fxaitools.app.n8n.cloud/webhook/generate-outfit',
-    // ElevenLabs Conversational AI agent ID. Empty = voice agent disabled.
-    ELEVENLABS_AGENT_ID: '',
-    // true = full two-way conversation; false = AI speaks only, mic disabled.
-    ELEVENLABS_INTERACTIVE: true,
+
+    // ElevenLabs Conversational AI
+    ELEVENLABS_AGENT_ID: 'agent_2701kr0nn95ne54b5b95y32kea17',
+    ELEVENLABS_INTERACTIVE: false,
+
+    // Google Gemini — color analysis (key exposed client-side; restrict to your domain in Google Cloud Console)
+    GEMINI_API_KEY: 'AIzaSyDNPLLMue07muX24bij41MLuwWMblabqQI',
+    GEMINI_MODEL: 'gemini-2.5-flash',
+
+    // Akool Streaming Avatar
+    AKOOL_CLIENT_ID: '0NIe6R2aN0eHPqj90uTMuA==',
+    AKOOL_CLIENT_SECRET: 'iDbocjjkomFRK04g9wBm6A7XbdnZZ2sP',
+    AKOOL_AVATAR_ID: '8t73BxlZn1SctVieuErZE',
+    AKOOL_VOICE_ID: '6889b628662160e2caad5dbc',
+    AKOOL_SESSION_DURATION: 600,
+
+    // Derived flags (read by akool-avatar.js)
+    get akoolEnabled() {
+        return !!(this.AKOOL_CLIENT_ID && this.AKOOL_CLIENT_SECRET);
+    },
+    get akoolVoiceId() {
+        return this.AKOOL_VOICE_ID;
+    },
 };
 
-// Hydrate runtime config from the server. Resolves once (or fails silently)
-// before the app boots so window.PHOTOBOOTH_CONFIG is the source of truth.
-window.PHOTOBOOTH_CONFIG_READY = (async () => {
-    try {
-        const res = await fetch('/api/config', { cache: 'no-store' });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data && typeof data === 'object') {
-            if (data.n8nWebhookUrl) {
-                window.PHOTOBOOTH_CONFIG.N8N_WEBHOOK_URL = data.n8nWebhookUrl;
-            }
-            if (typeof data.elevenLabsAgentId === 'string') {
-                window.PHOTOBOOTH_CONFIG.ELEVENLABS_AGENT_ID = data.elevenLabsAgentId;
-            }
-            if (typeof data.elevenLabsInteractive === 'boolean') {
-                window.PHOTOBOOTH_CONFIG.ELEVENLABS_INTERACTIVE = data.elevenLabsInteractive;
-            }
-        }
-    } catch (err) {
-        console.warn('[config] /api/config unreachable, using defaults.', err);
-    }
-})();
+window.PHOTOBOOTH_CONFIG_READY = Promise.resolve();

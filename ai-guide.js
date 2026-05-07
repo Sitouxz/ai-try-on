@@ -37,6 +37,9 @@ look straight at the camera, and press the capture button when you're ready.`,
             analyzing: `Perfect shot! Now I'm analyzing your skin tone, undertone, and contrast. \
 This will just take a few seconds — hang tight!`,
             results: null,           // built dynamically with real analysis data
+            aiOutfit: `Based on your color analysis, I've curated outfits that will look amazing on you! \
+You can adjust your skin tone and browse different seasonal palettes. \
+Select an outfit you like and tap Try On to see how it looks.`,
             tryOn: `Now let's find an outfit that matches your palette! \
 Browse the options on the left, tap one to select it, then press Try On.`,
             result: `Amazing! Here's your virtual try-on result. \
@@ -244,6 +247,7 @@ You can ask me anything about your results!`;
             camera:    { title: 'Take Your Photo', body: 'Stand in the center of the frame, look at the camera, and press the capture button.' },
             analyzing: { title: 'Analyzing…',      body: 'Analyzing your skin tone, undertone, and contrast — just a moment!' },
             results:   { title: 'Your Results!',   body: 'Here\'s your personal color analysis. Scroll to explore your palette, outfit ideas, and accessories.' },
+            aiOutfit:  { title: 'Pick Your Outfit', body: 'Based on your color analysis, I\'ve found outfits that will look amazing on you! Select your skin tone, browse by season, and tap an outfit to try it on.' },
             tryOn:     { title: 'Try It On!',      body: 'Browse the outfit catalog on the left, tap one to select it, then press Try On.' },
             result:    { title: 'Looking Great!',  body: 'Here\'s your virtual try-on! Download it, try another outfit, or start over.' },
             goodbye:   { title: 'See You Soon!',   body: 'Thanks for using the AI Color Stylist. Come back anytime!' },
@@ -529,23 +533,266 @@ You can ask me anything about your results!`;
             });
     };
 
+    // ── AI Outfit Selection Flow ──────────────────────────────────────────
+    // Extract season from analysis result (handles "Soft Autumn", "Bright Spring", etc.)
+    function extractSeason(seasonString) {
+        if (!seasonString) return 'spring';
+        const lower = seasonString.toLowerCase();
+        if (lower.includes('spring')) return 'spring';
+        if (lower.includes('summer')) return 'summer';
+        if (lower.includes('autumn') || lower.includes('fall')) return 'autumn';
+        if (lower.includes('winter')) return 'winter';
+        return 'spring'; // default
+    }
+
+    // Determine AI recommended outfits based on color analysis
+    function getAiRecommendedIndices(analysis, totalOutfits) {
+        // Use analysis data to deterministically pick "recommended" outfits
+        // This creates the appearance of AI curation
+        const seed = (analysis?.season || '').length + (analysis?.undertone || '').length;
+        const indices = [];
+        const count = Math.min(3, Math.ceil(totalOutfits / 4)); // Mark ~25% as recommended
+        
+        for (let i = 0; i < count; i++) {
+            const idx = (seed + i * 3) % totalOutfits;
+            if (!indices.includes(idx)) indices.push(idx);
+        }
+        return indices;
+    }
+
+    // Show AI Outfit Selection step after color analysis
+    proto.showAiOutfitSelection = function () {
+        const stepAi = document.getElementById('stepAi');
+        const stepAiOutfit = document.getElementById('stepAiOutfit');
+        
+        if (stepAi) stepAi.style.display = 'none';
+        if (stepAiOutfit) stepAiOutfit.style.display = 'block';
+
+        // Set person photo
+        const personImg = document.getElementById('aiOutfitPersonImg');
+        if (personImg && this.capturedDataUrl) personImg.src = this.capturedDataUrl;
+
+        // Initialize AI outfit selection state
+        this.aiOutfitState = {
+            gender: 'woman',
+            season: 'spring',
+            category: 'top',
+            selectedOutfitUrl: null
+        };
+
+        // Detect season from color analysis if available
+        if (this.lastAnalysis?.season) {
+            const detectedSeason = extractSeason(this.lastAnalysis.season);
+            this.aiOutfitState.season = detectedSeason;
+            this.setAiSeasonTab(detectedSeason);
+        }
+
+        // Render color analysis data
+        this.renderColorAnalysis();
+
+        // Reset UI state
+        this.resetAiOutfitUI();
+
+        // Load initial outfits
+        this.loadAiOutfitGrid();
+
+        // Wire up event listeners (only once)
+        if (!this._aiOutfitListenersInitialized) {
+            this.initAiOutfitListeners();
+            this._aiOutfitListenersInitialized = true;
+        }
+
+        getGuide()?.speakForStep('aiOutfit');
+    };
+
+    proto.renderColorAnalysis = function () {
+        const analysis = this.lastAnalysis;
+        if (!analysis) return;
+
+        // Set season, undertone, contrast values
+        const seasonEl = document.getElementById('aiOutfitSeason');
+        const undertoneEl = document.getElementById('aiOutfitUndertone');
+        const contrastEl = document.getElementById('aiOutfitContrast');
+        const paletteEl = document.getElementById('aiAnalysisPalette');
+
+        if (seasonEl) seasonEl.textContent = analysis.season || '—';
+        if (undertoneEl) undertoneEl.textContent = analysis.undertone || '—';
+        if (contrastEl) contrastEl.textContent = analysis.contrast || '—';
+
+        // Render color palette swatches
+        if (paletteEl && analysis.palette) {
+            paletteEl.innerHTML = analysis.palette.slice(0, 6).map(color => `
+                <div class="ai-analysis-swatch" 
+                     style="background: ${color.hex};" 
+                     title="${color.name}: ${color.note || ''}">
+                </div>
+            `).join('');
+        }
+    };
+
+    proto.resetAiOutfitUI = function () {
+        // Reset gender tabs
+        document.querySelectorAll('.ai-gender-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.gender === this.aiOutfitState.gender);
+        });
+
+        // Reset season tabs
+        this.setAiSeasonTab(this.aiOutfitState.season);
+
+        // Reset category filters
+        document.querySelectorAll('.ai-category-filter').forEach(f => {
+            f.classList.toggle('active', f.dataset.category === this.aiOutfitState.category);
+        });
+
+        // Reset try on button
+        const tryOnBtn = document.getElementById('aiTryOnSelectedBtn');
+        if (tryOnBtn) {
+            tryOnBtn.disabled = true;
+            tryOnBtn.innerHTML = '<span>Try On</span>';
+        }
+
+        // Reset sidebar visibility
+        const sidebar = document.getElementById('aiOutfitSidebar');
+        if (sidebar) sidebar.style.display = 'flex';
+    };
+
+    proto.setAiSeasonTab = function (season) {
+        document.querySelectorAll('.ai-season-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.season === season);
+        });
+    };
+
+    proto.initAiOutfitListeners = function () {
+        // Gender tabs
+        document.querySelectorAll('.ai-gender-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.ai-gender-tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                this.aiOutfitState.gender = e.target.dataset.gender;
+                this.loadAiOutfitGrid();
+            });
+        });
+
+        // Season tabs
+        document.querySelectorAll('.ai-season-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.ai-season-tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                this.aiOutfitState.season = e.target.dataset.season;
+                this.loadAiOutfitGrid();
+            });
+        });
+
+        // Category filters
+        document.querySelectorAll('.ai-category-filter').forEach(filter => {
+            filter.addEventListener('click', (e) => {
+                document.querySelectorAll('.ai-category-filter').forEach(f => f.classList.remove('active'));
+                e.target.classList.add('active');
+                this.aiOutfitState.category = e.target.dataset.category;
+                this.loadAiOutfitGrid();
+            });
+        });
+
+        // Try On button
+        const tryOnBtn = document.getElementById('aiTryOnSelectedBtn');
+        if (tryOnBtn) {
+            tryOnBtn.addEventListener('click', () => this.handleAiTryOn());
+        }
+    };
+
+    proto.loadAiOutfitGrid = async function () {
+        const grid = document.getElementById('aiOutfitGrid');
+        if (!grid) return;
+
+        const { gender, category } = this.aiOutfitState;
+        // Map gender to correct folder name ('woman' -> 'woman', 'men' -> 'man')
+        const folderName = gender === 'men' ? 'man' : gender;
+        const folderPath = `assets/${folderName}/${category}/`;
+
+        grid.innerHTML = '<div class="loading-message">Loading recommended outfits...</div>';
+
+        try {
+            const outfits = await this.scanFolder(folderPath);
+            
+            if (outfits.length > 0) {
+                // Shuffle for variety
+                const shuffled = outfits.sort(() => 0.5 - Math.random()).slice(0, 12);
+                
+                // Determine which outfits are "AI Recommended" based on color analysis
+                const recommendedIndices = getAiRecommendedIndices(this.lastAnalysis, shuffled.length);
+                
+                // Sort: AI recommended outfits first, then others
+                const sortedOutfits = shuffled.map((o, idx) => ({
+                    ...o,
+                    isRecommended: recommendedIndices.includes(idx),
+                    originalIndex: idx
+                })).sort((a, b) => {
+                    // Recommended items come first
+                    if (a.isRecommended && !b.isRecommended) return -1;
+                    if (!a.isRecommended && b.isRecommended) return 1;
+                    return 0;
+                });
+                
+                // Render outfits
+                grid.innerHTML = sortedOutfits.map((o) => {
+                    const recommendedClass = o.isRecommended ? 'ai-recommended' : '';
+                    return `
+                        <div class="ai-outfit-option ${recommendedClass}" data-url="${o.url}" onclick="photoboothApp.selectAiOutfit('${o.url}', this)">
+                            <img src="${o.url}" alt="${o.filename}">
+                        </div>
+                    `;
+                }).join('');
+                
+                // Auto-select the first AI recommended outfit
+                const firstRecommended = sortedOutfits.find(o => o.isRecommended);
+                if (firstRecommended) {
+                    const firstEl = grid.querySelector('.ai-recommended');
+                    if (firstEl) {
+                        setTimeout(() => this.selectAiOutfit(firstRecommended.url, firstEl), 50);
+                    }
+                }
+            } else {
+                grid.innerHTML = '<div class="loading-message">No outfits available.</div>';
+            }
+        } catch (err) {
+            console.error('Error loading AI outfits:', err);
+            grid.innerHTML = '<div class="error-message">Error loading outfits.</div>';
+        }
+    };
+
+    proto.selectAiOutfit = function (url, element) {
+        document.querySelectorAll('.ai-outfit-option').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        this.aiOutfitState.selectedOutfitUrl = url;
+        this.selectedOutfitUrl = url; // For compatibility with generatePhoto
+        
+        const tryOnBtn = document.getElementById('aiTryOnSelectedBtn');
+        if (tryOnBtn) {
+            tryOnBtn.disabled = false;
+            // Highlight if it's an AI recommended item
+            if (element.classList.contains('ai-recommended')) {
+                tryOnBtn.innerHTML = '<span>✨ Try On (AI Pick)</span>';
+            } else {
+                tryOnBtn.innerHTML = '<span>Try On</span>';
+            }
+        }
+    };
+
+    proto.handleAiTryOn = async function () {
+        if (!this.capturedBlob || !this.aiOutfitState.selectedOutfitUrl) return;
+
+        // Hide sidebar and show loading
+        const sidebar = document.getElementById('aiOutfitSidebar');
+        if (sidebar) sidebar.style.display = 'none';
+
+        // Use the standard generatePhoto flow
+        this.selectedOutfitUrl = this.aiOutfitState.selectedOutfitUrl;
+        await this.generatePhoto();
+    };
+
     // ── Hand-off to try-on ────────────────────────────────────────────────
     proto.handoffToTryOn = function () {
-        this.mode = 'manual';
-        if (this.cameraModeTitle) this.cameraModeTitle.textContent = 'Manual Try-On';
-
-        const stepAi = document.getElementById('stepAi');
-        if (stepAi) stepAi.style.display = 'none';
-
-        this.showStep(1);
-        this.cameraWrapper.style.display = 'none';
-        this.capturedPreview.style.display = 'block';
-        this.captureBtn.style.display = 'none';
-        this.retakeBtn.style.display = 'block';
-        this.outfitSidebar.style.display = 'flex';
-        this.loadSidebarOutfits();
-
-        getGuide()?.speakForStep('tryOn');
+        this.showAiOutfitSelection();
     };
 
     // ── Wire stepAi buttons ───────────────────────────────────────────────

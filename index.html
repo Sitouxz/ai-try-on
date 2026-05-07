@@ -211,6 +211,71 @@
                     </div>
                 </div>
 
+                <!-- Step AI Outfit: AI-Based Outfit Selection -->
+                <div id="stepAiOutfit" class="camera-page" style="display:none">
+                    <h2 class="camera-page-title">AI Guide</h2>
+                    
+                    <!-- AI Outfit Sidebar -->
+                    <div class="ai-outfit-sidebar" id="aiOutfitSidebar">
+                        <!-- Color Analysis Summary -->
+                        <div class="ai-color-analysis-section">
+                            <p class="ai-analysis-label">Your Color Analysis</p>
+                            <div class="ai-analysis-meta" id="aiAnalysisMeta">
+                                <div class="ai-analysis-item">
+                                    <span class="ai-analysis-value" id="aiOutfitSeason">—</span>
+                                    <span class="ai-analysis-label-small">Season</span>
+                                </div>
+                                <div class="ai-analysis-item">
+                                    <span class="ai-analysis-value" id="aiOutfitUndertone">—</span>
+                                    <span class="ai-analysis-label-small">Undertone</span>
+                                </div>
+                                <div class="ai-analysis-item">
+                                    <span class="ai-analysis-value" id="aiOutfitContrast">—</span>
+                                    <span class="ai-analysis-label-small">Contrast</span>
+                                </div>
+                            </div>
+                            <div class="ai-analysis-palette" id="aiAnalysisPalette"></div>
+                        </div>
+                        
+                        <!-- Gender Tabs -->
+                        <div class="ai-gender-tabs" id="aiGenderTabs">
+                            <button class="ai-gender-tab active" data-gender="woman">WOMAN</button>
+                            <button class="ai-gender-tab" data-gender="men">MEN</button>
+                        </div>
+                        
+                        <!-- Season Tabs -->
+                        <div class="ai-season-tabs" id="aiSeasonTabs">
+                            <button class="ai-season-tab active" data-season="spring">Spring</button>
+                            <button class="ai-season-tab" data-season="summer">Summer</button>
+                            <button class="ai-season-tab" data-season="autumn">Autumn</button>
+                            <button class="ai-season-tab" data-season="winter">Winter</button>
+                        </div>
+                        
+                        <!-- Category Filters -->
+                        <div class="ai-category-filters">
+                            <button class="ai-category-filter active" data-category="top">TOP</button>
+                            <button class="ai-category-filter" data-category="bottom">BOTTOM</button>
+                        </div>
+                        
+                        <!-- AI Outfit Grid -->
+                        <div class="ai-outfit-grid" id="aiOutfitGrid">
+                            <div class="loading-message">Loading recommended outfits...</div>
+                        </div>
+                        
+                        <!-- AI Try On Button -->
+                        <button id="aiTryOnSelectedBtn" class="btn btn-primary ai-try-on-btn" disabled>
+                            <span>Try On</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Main Preview Area -->
+                    <div class="camera-stage">
+                        <div class="captured-card">
+                            <img id="aiOutfitPersonImg" alt="Your photo">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Step 4: Result -->
                 <div id="step4" class="camera-page" style="display:none">
                     <h2 class="camera-page-title">Manual Try-On</h2>

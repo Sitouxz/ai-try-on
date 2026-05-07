@@ -378,7 +378,9 @@ class PhotoboothApp {
             this.uploadArea.style.display = 'none';
             this.sidebarOutfitGrid.innerHTML = '<div class="loading-message">Loading outfits...</div>';
 
-            const folderPath = `assets/${this.currentGender}/${this.currentCategory}/`;
+            // Map gender to correct folder name ('woman' -> 'woman', 'men' -> 'man')
+            const folderName = this.currentGender === 'men' ? 'man' : this.currentGender;
+            const folderPath = `assets/${folderName}/${this.currentCategory}/`;
             const outfits = await this.loadOutfitsFromFolder(folderPath);
             
             if (outfits.length > 0) {
@@ -404,17 +406,23 @@ class PhotoboothApp {
             'image 9.png', 'image 10.png', 'image 11.png', 'image 12.png'
         ];
 
+        console.log(`[scanFolder] Scanning: ${folderPath}`);
+
         for (const imageName of commonImages) {
-            const url = `${folderPath}${imageName}`;
+            const encodedImageName = encodeURIComponent(imageName);
+            const url = `${folderPath}${encodedImageName}`;
             try {
                 const response = await fetch(url, { method: 'HEAD' });
                 if (response.ok) {
                     outfits.push({ url, filename: imageName });
+                    console.log(`[scanFolder] Found: ${url}`);
                 }
             } catch (err) {
+                // Silent fail - file doesn't exist
             }
         }
         
+        console.log(`[scanFolder] Total outfits found: ${outfits.length}`);
         return outfits;
     }
 

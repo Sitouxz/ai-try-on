@@ -1619,7 +1619,317 @@ body {
 .camera-unavailable .cam-icon { font-size: 3rem; margin-bottom: 14px; }
 .camera-unavailable p { font-size: 0.9rem; line-height: 1.6; }
 
+/* ── AI Outfit Selection Sidebar ───────────────────────────────────────── */
+.ai-outfit-sidebar {
+    position: fixed;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 320px;
+    max-height: 85vh;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 50;
+    overflow-y: auto;
+}
+
+/* Color Analysis Section */
+.ai-color-analysis-section {
+    background: rgba(91, 124, 250, 0.06);
+    border-radius: 16px;
+    padding: 14px 12px;
+}
+
+.ai-analysis-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #5b7cfa;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.ai-analysis-meta {
+    display: flex;
+    justify-content: space-around;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.ai-analysis-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.ai-analysis-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: center;
+}
+
+.ai-analysis-label-small {
+    font-size: 0.65rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.ai-analysis-palette {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 8px;
+    border-top: 1px solid rgba(91, 124, 250, 0.15);
+}
+
+.ai-analysis-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.ai-analysis-swatch:hover {
+    transform: scale(1.15);
+}
+
+/* Gender Tabs */
+.ai-gender-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(91, 124, 250, 0.08);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.ai-gender-tab {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: #5b7cfa;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.5px;
+}
+
+.ai-gender-tab.active {
+    background: #5b7cfa;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(91, 124, 250, 0.3);
+}
+
+.ai-gender-tab:hover:not(.active) {
+    background: rgba(91, 124, 250, 0.12);
+}
+
+/* Season Tabs */
+.ai-season-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(91, 124, 250, 0.08);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.ai-season-tab {
+    flex: 1;
+    padding: 8px 6px;
+    border: none;
+    background: transparent;
+    color: #5b7cfa;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.3px;
+}
+
+.ai-season-tab.active {
+    background: #5b7cfa;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(91, 124, 250, 0.3);
+}
+
+.ai-season-tab:hover:not(.active) {
+    background: rgba(91, 124, 250, 0.12);
+}
+
+/* AI Category Filters */
+.ai-category-filters {
+    display: flex;
+    gap: 6px;
+}
+
+.ai-category-filter {
+    flex: 1;
+    padding: 7px 12px;
+    border: none;
+    background: rgba(91, 124, 250, 0.08);
+    color: #5b7cfa;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.3px;
+}
+
+.ai-category-filter.active {
+    background: #5b7cfa;
+    color: #fff;
+}
+
+.ai-category-filter:hover:not(.active) {
+    background: rgba(91, 124, 250, 0.12);
+}
+
+/* AI Outfit Grid */
+.ai-outfit-grid {
+    flex: 1;
+    min-height: 200px;
+    max-height: 320px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 4px;
+}
+
+.ai-outfit-grid::-webkit-scrollbar {
+    width: 5px;
+}
+
+.ai-outfit-grid::-webkit-scrollbar-track {
+    background: rgba(91, 124, 250, 0.05);
+    border-radius: 3px;
+}
+
+.ai-outfit-grid::-webkit-scrollbar-thumb {
+    background: rgba(91, 124, 250, 0.3);
+    border-radius: 3px;
+}
+
+.ai-outfit-option {
+    background: #fff;
+    border: 2px solid rgba(91, 124, 250, 0.12);
+    border-radius: 12px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.ai-outfit-option:hover {
+    border-color: #5b7cfa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(91, 124, 250, 0.2);
+}
+
+.ai-outfit-option.selected {
+    border-color: #5b7cfa;
+    border-width: 3px;
+    background: rgba(91, 124, 250, 0.08);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(91, 124, 250, 0.4);
+}
+
+.ai-outfit-option.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    background: #5b7cfa;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(91, 124, 250, 0.4);
+}
+
+/* AI Recommendation Badge - "For You" */
+.ai-outfit-option.ai-recommended::before {
+    content: 'For You';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: linear-gradient(135deg, #7c3aed, #5b7cfa);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    z-index: 2;
+    box-shadow: 0 2px 6px rgba(91, 124, 250, 0.4);
+}
+
+.ai-outfit-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+/* AI Try On Button */
+.ai-try-on-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #5b7cfa, #7c3aed);
+}
+
+.ai-try-on-btn:disabled {
+    background: #cbd5e1;
+    color: #94a3b8;
+}
+
 /* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .ai-outfit-sidebar {
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: none;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        max-height: none;
+    }
+
+    #stepAiOutfit .camera-stage {
+        display: none;
+    }
+}
+
 @media (max-width: 640px) {
     .landing-card { width: 155px; padding: 22px 14px 18px; }
     .landing-card img { width: 52px; height: 52px; }
@@ -1629,6 +1939,31 @@ body {
     header h1 { font-size: 2.1rem; }
     .step-container { padding: 26px 18px; }
     .step-header h2 { font-size: 1.5rem; }
+    
+    .ai-outfit-sidebar {
+        width: calc(100% - 32px);
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .ai-skin-swatches {
+        gap: 6px;
+    }
+
+    .ai-skin-swatch {
+        width: 28px;
+        height: 28px;
+    }
+
+    .ai-season-tab {
+        font-size: 0.7rem;
+        padding: 6px 4px;
+    }
+
+    .ai-outfit-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
     .outfit-options { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
     .processing-steps { gap: 22px; }
     .result-actions { flex-direction: column; align-items: center; }

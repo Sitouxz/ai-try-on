@@ -1,8 +1,8 @@
-// AI Guide — color analysis flow + Akool streaming avatar voice guide.
+﻿// AI Guide — color analysis flow + ElevenLabs avatar voice guide.
 // Augments the PhotoboothApp class (see script.js) with the methods required for
 // the "Let AI Guide You" mode: sends the captured photo to Gemini for color analysis,
 // renders the resulting palette + outfit + accessory recommendations, and instructs
-// the Akool streaming avatar to speak at each step.
+// the ElevenLabs avatar to speak at each step.
 
 (function () {
     if (typeof PhotoboothApp === 'undefined') {
@@ -12,7 +12,7 @@
 
     const proto = PhotoboothApp.prototype;
 
-    // ── Akool step prompts ─────────────────────────────────────────────────────
+    // ── Avatar step prompts ────────────────────────────────────────────────────
     const STEP_PROMPTS = {
         camera: 'Please greet the user warmly and tell them to stand in the center of the frame, look straight at the camera, and press the capture button when they are ready.',
         analyzing: 'Tell the user their photo looks great and that you are now analyzing their skin tone, undertone, and contrast. Ask them to hang tight for just a moment.',
@@ -27,15 +27,19 @@
         return `Tell the user their color analysis results are ready. Their personal color season is ${season}${undertone ? ` with a ${undertone} undertone` : ''}. ${top3 ? `Their top flattering colors are ${top3}.` : ''} Encourage them to scroll down to explore their full palette, outfit recommendations, and accessory suggestions, and invite them to ask any questions.`;
     }
 
-    function akoolSpeak(step, analysis = null) {
+    function avatarSpeak(step, analysis = null) {
         const prompt = step === 'results' ? buildResultsPrompt(analysis) : STEP_PROMPTS[step];
         if (!prompt) return;
         let tries = 0;
         const attempt = () => {
-            if (window.akoolAvatar?.running) {
-                window.akoolAvatar.speak(prompt);
-            } else if (tries++ < 20) {
+            if (window.elevenLabsAvatar?.running) {
+                window.elevenLabsAvatar.speak(prompt);
+            } else if (tries++ < 13) {
+                // Wait up to ~4s for ElevenLabs to connect, then fall through to TTS fallback
                 setTimeout(attempt, 300);
+            } else {
+                // Session not up — speak() will use browser TTS fallback
+                window.elevenLabsAvatar?.speak(prompt);
             }
         };
         attempt();
@@ -46,7 +50,7 @@
     proto.showApp = function (mode) {
         _origShowApp.call(this, mode);
         if (mode === 'ai') {
-            setTimeout(() => akoolSpeak('camera'), 1800);
+            setTimeout(() => avatarSpeak('camera'), 1800);
         }
     };
 
@@ -58,7 +62,7 @@
     const _origShowResult = proto.showResult;
     proto.showResult = function (imageUrl) {
         _origShowResult.call(this, imageUrl);
-        akoolSpeak('result');
+        avatarSpeak('result');
     };
 
     // ── AI analysis flow ──────────────────────────────────────────────────
@@ -68,7 +72,7 @@
         if (overlay) overlay.style.display = 'flex';
         if (overlayText) overlayText.textContent = 'Analyzing your colors…';
 
-        akoolSpeak('analyzing');
+        avatarSpeak('analyzing');
 
         try {
             const base64 = await this._dataUrlToBase64(this.capturedDataUrl);
@@ -268,7 +272,7 @@
                 .join('');
         }
 
-        setTimeout(() => akoolSpeak('results', analysis), 800);
+        setTimeout(() => avatarSpeak('results', analysis), 800);
     };
 
     proto.showAiError = function (message) {
@@ -367,7 +371,7 @@
             this._aiOutfitListenersInitialized = true;
         }
 
-        akoolSpeak('aiOutfit');
+        avatarSpeak('aiOutfit');
     };
 
     proto.renderColorAnalysis = function () {

@@ -1,4 +1,4 @@
-/* Reset */
+﻿/* Reset */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 /* Body */
@@ -1357,11 +1357,11 @@ body {
 .ai-avatar-container {
     position: fixed;
     bottom: 0;
-    right: calc(-1 * var(--avatar-w, 420px));
+    right: calc(-1 * var(--avatar-w, 560px));
     left: auto;
-    width: var(--avatar-w, 420px);
-    height: 90vh;
-    max-height: 860px;
+    width: var(--avatar-w, 560px);
+    height: 95vh;
+    max-height: 980px;
     z-index: 250;
     pointer-events: none;
     background: transparent;
@@ -1427,33 +1427,42 @@ body {
     50%       { transform: scaleX(1.2); opacity: 1;   }
 }
 
-/* ── Akool Streaming Avatar (blended into UI) ────────────────────────────── */
-.akool-avatar-fallback { display: block; }
+/* ── ElevenLabs / Avatar container ─────────────────────────────────────── */
 
-/* Video fills the entire container slot */
-.akool-video-wrap {
-    display: none;
+/* Wrap is always visible — contains static avatar img and talking video */
+.el-video-wrap {
+    display: flex;
     position: absolute;
     inset: 0;
     overflow: hidden;
     background: transparent;
+    align-items: flex-end;
+    justify-content: center;
 }
 
-.akool-remote-video {
+/* Source videos — decoded but never shown directly */
+.el-src-video {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    background: transparent;
+    opacity: 0;
+    pointer-events: none;
 }
-.akool-remote-video video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover;
+
+/* Chroma-keyed canvas — right-anchored, scaled up, left empty space clips */
+.el-avatar-canvas {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    height: 80%;
+    width: auto;
+    pointer-events: none;
     background: transparent;
 }
 
 /* Status badge — hidden, only used for debug logs */
-.akool-status-badge {
+.el-status-badge {
     display: none;
     position: absolute;
     top: 10px;
@@ -1472,14 +1481,14 @@ body {
     opacity: 0;
     transition: opacity 0.3s;
 }
-.akool-status-badge:not(:empty) { opacity: 1; }
-.akool-status-connecting { background: rgba(250,180,30,0.75); color: #111; }
-.akool-status-live       { background: rgba(46,195,120,0.75); color: #fff; }
-.akool-status-error      { background: rgba(220,60,60,0.75);  color: #fff; }
-.akool-status-mic        { background: rgba(91,124,250,0.85); color: #fff; }
+.el-status-badge:not(:empty) { opacity: 1; }
+.el-status-connecting { background: rgba(250,180,30,0.75); color: #111; }
+.el-status-live       { background: rgba(46,195,120,0.75); color: #fff; }
+.el-status-error      { background: rgba(220,60,60,0.75);  color: #fff; }
+.el-status-mic        { background: rgba(91,124,250,0.85); color: #fff; }
 
 /* Caption: white speech card floating to the LEFT of the avatar */
-.akool-caption {
+.el-caption {
     position: absolute;
     bottom: 120px;
     right: calc(100% + 14px);
@@ -1495,31 +1504,31 @@ body {
     transition: opacity 0.35s ease, transform 0.35s ease;
     z-index: 12;
 }
-.akool-caption.caption-visible {
+.el-caption.caption-visible {
     opacity: 1;
     transform: translateY(0);
 }
 
-.akool-caption-title {
+.el-caption-title {
     font-size: 17px;
     font-weight: 700;
     color: #1a6bbf;
     margin-bottom: 8px;
 }
 
-.akool-caption-body {
+.el-caption-body {
     font-size: 14px;
     line-height: 1.55;
     color: #333;
     margin: 0 0 16px;
 }
 
-.akool-caption-footer {
+.el-caption-footer {
     display: flex;
     justify-content: flex-end;
 }
 
-.akool-caption-ok {
+.el-caption-ok {
     background: #1a6bbf;
     color: #fff;
     border: none;
@@ -1531,12 +1540,12 @@ body {
     letter-spacing: 0.02em;
     transition: background 0.15s;
 }
-.akool-caption-ok:hover { background: #155ea8; }
+.el-caption-ok:hover { background: #155ea8; }
 
 /* Chat bar — hidden for now, user interacts via mic only */
-.akool-chat-bar { display: none; }
+.el-chat-bar { display: none; }
 
-.akool-text-input {
+.el-text-input {
     flex: 1;
     background: transparent;
     border: none;
@@ -1545,10 +1554,10 @@ body {
     font-size: 12px;
     min-width: 0;
 }
-.akool-text-input::placeholder { color: rgba(255,255,255,0.35); }
-.akool-text-input:disabled { opacity: 0.4; cursor: not-allowed; }
+.el-text-input::placeholder { color: rgba(255,255,255,0.35); }
+.el-text-input:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.akool-btn {
+.el-btn {
     background: transparent;
     border: none;
     cursor: pointer;
@@ -1561,24 +1570,16 @@ body {
     transition: color 0.2s, background 0.2s;
     flex-shrink: 0;
 }
-.akool-btn svg { width: 16px; height: 16px; }
-.akool-btn:hover { color: #fff; background: rgba(255,255,255,0.12); }
-.akool-btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
-.akool-btn.mic-active { color: #6b9bff; background: rgba(91,124,250,0.2); }
+.el-btn svg { width: 16px; height: 16px; }
+.el-btn:hover { color: #fff; background: rgba(255,255,255,0.12); }
+.el-btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+.el-btn.mic-active { color: #6b9bff; background: rgba(91,124,250,0.2); }
 
-/* Live: show video, hide fallback */
-.ai-avatar-container.akool-live .akool-avatar-fallback    { display: none !important; }
-.ai-avatar-container.akool-live .akool-video-wrap         { display: block !important; }
-
-/* Connecting: show video slot (empty) while joining channel */
-.ai-avatar-container.akool-connecting .akool-avatar-fallback { display: none !important; }
-.ai-avatar-container.akool-connecting .akool-video-wrap      { display: block !important; }
-
-/* Speaking pulse when avatar is talking */
-.ai-avatar-container.avatar-speaking.akool-live .ai-avatar-pulse { opacity: 1; }
+/* Speaking pulse when ElevenLabs agent is talking */
+.ai-avatar-container.avatar-speaking .ai-avatar-pulse { opacity: 1; }
 
 /* ── Floating mic button ──────────────────────────────────────────────── */
-.akool-mic-float {
+.el-mic-float {
     position: absolute;
     bottom: 18px;
     left: 50%;
@@ -1599,26 +1600,26 @@ body {
     transition: background 0.2s, border-color 0.2s, color 0.2s;
     overflow: visible;
 }
-.akool-mic-float svg {
+.el-mic-float svg {
     width: 20px;
     height: 20px;
     position: relative;
     z-index: 1;
 }
 /* show muted icon by default; swap via classes */
-.akool-mic-float .mic-icon-off { display: none; }
-.akool-mic-float.mic-muted .mic-icon-on  { display: none; }
-.akool-mic-float.mic-muted .mic-icon-off { display: block; }
+.el-mic-float .mic-icon-off { display: none; }
+.el-mic-float.mic-muted .mic-icon-on  { display: none; }
+.el-mic-float.mic-muted .mic-icon-off { display: block; }
 
 /* listening state */
-.akool-mic-float.mic-listening {
+.el-mic-float.mic-listening {
     display: flex;
     color: #fff;
     border-color: rgba(91,124,250,0.7);
     background: rgba(91,124,250,0.25);
 }
 /* muted state (still visible so user can unmute) */
-.akool-mic-float.mic-muted {
+.el-mic-float.mic-muted {
     display: flex;
     color: rgba(255,255,255,0.45);
     border-color: rgba(255,255,255,0.2);
@@ -1634,7 +1635,7 @@ body {
     pointer-events: none;
     transition: border-color 0.3s;
 }
-.akool-mic-float.mic-listening .mic-pulse-ring {
+.el-mic-float.mic-listening .mic-pulse-ring {
     border-color: rgba(91,124,250,0.55);
     animation: mic-ring-pulse 1.8s ease-in-out infinite;
 }

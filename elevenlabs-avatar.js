@@ -13,6 +13,7 @@
     let _micMuted     = false;
     let _connectTime  = 0;   // timestamp of last onConnect
     let _autoRetries  = 0;   // brief-disconnect retries remaining
+    let _pendingSpeak = null; // queued speak text, flushed 2s after connect
 
     const $ = (id) => document.getElementById(id);
     const container = () => document.getElementById('aiAvatarContainer');
@@ -335,6 +336,14 @@
                     setStatus('Live', 'el-status-live');
                     updateControlState(true);
                     setTimeout(() => setMicUi(true), 600);
+                    // Flush queued speak after 2s — lets ElevenLabs first-message finish first
+                    setTimeout(() => {
+                        if (_pendingSpeak && _running) {
+                            const text = _pendingSpeak;
+                            _pendingSpeak = null;
+                            speak(text);
+                        }
+                    }, 2000);
                 },
 
                 onDisconnect: () => {
@@ -389,49 +398,33 @@
     async function stopSession() {
         const conv = _conversation;
         _conversation = null;
-        _running     = false;
-        _starting    = false;
-        _micMuted    = false;
-        _autoRetries = 0;   // prevent auto-restart after deliberate stop
+        _running      = false;
+        _starting     = false;
+        _micMuted     = false;
+        _autoRetries  = 0;   // prevent auto-restart after deliberate stop
+        _pendingSpeak = null;
         setAvatarSpeaking(false);
         hideContainer();
         updateControlState(false);
         try { await conv?.endSession(); } catch (e) { console.warn('[el-avatar] endSession error:', e); }
     }
 
-    // ── Browser TTS fallback ──────────────────────────────────────────────────
-    // Used when the ElevenLabs session is dead or unavailable.
-    function _speakFallback(text) {
-        if (!window.speechSynthesis) return;
-        window.speechSynthesis.cancel();
-        const utt = new SpeechSynthesisUtterance(text);
-        utt.rate  = 1.0;
-        utt.pitch = 1.0;
-        utt.onstart = () => setAvatarSpeaking(true);
-        utt.onend   = () => setAvatarSpeaking(false);
-        utt.onerror = () => setAvatarSpeaking(false);
-        window.speechSynthesis.speak(utt);
-        console.info('[el-avatar] Using browser TTS fallback.');
-    }
-
-    // ── Speak ─────────────────────────────────────────────────────────────────
+// ── Speak ─────────────────────────────────────────────────────────────────
     function speak(text) {
-        showCaption(text);
         if (!_running || !_conversation) {
-            _speakFallback(text);
+            // Queue for delivery once session connects; latest prompt wins
+            _pendingSpeak = text;
             return;
         }
+        showCaption(text);
         try {
             if (typeof _conversation.sendUserMessage === 'function') {
                 _conversation.sendUserMessage(text);
             } else if (typeof _conversation.sendContextualUpdate === 'function') {
                 _conversation.sendContextualUpdate(text);
-            } else {
-                _speakFallback(text);
             }
         } catch (e) {
             console.warn('[el-avatar] speak failed:', e);
-            _speakFallback(text);
         }
     }
 

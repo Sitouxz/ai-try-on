@@ -30,19 +30,8 @@
     function avatarSpeak(step, analysis = null) {
         const prompt = step === 'results' ? buildResultsPrompt(analysis) : STEP_PROMPTS[step];
         if (!prompt) return;
-        let tries = 0;
-        const attempt = () => {
-            if (window.elevenLabsAvatar?.running) {
-                window.elevenLabsAvatar.speak(prompt);
-            } else if (tries++ < 13) {
-                // Wait up to ~4s for ElevenLabs to connect, then fall through to TTS fallback
-                setTimeout(attempt, 300);
-            } else {
-                // Session not up — speak() will use browser TTS fallback
-                window.elevenLabsAvatar?.speak(prompt);
-            }
-        };
-        attempt();
+        // speak() queues the prompt if session not yet running; latest wins
+        window.elevenLabsAvatar?.speak(prompt);
     }
 
     // ── Wrap app lifecycle methods to inject voice guidance ───────────────

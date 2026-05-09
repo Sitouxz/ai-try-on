@@ -416,7 +416,6 @@
             _pendingSpeak = text;
             return;
         }
-        showCaption(text);
         try {
             if (typeof _conversation.sendUserMessage === 'function') {
                 _conversation.sendUserMessage(text);

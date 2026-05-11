@@ -64,21 +64,10 @@
     }
 
     function avatarSpeak(step, analysis = null) {
-        const entry   = step === 'results' ? buildResultsPrompt(analysis) : STEP_PROMPTS[step];
-        if (!entry) return;
-        const context = entry.context;
-        const trigger = entry.trigger || null;
-        let tries = 0;
-        const attempt = () => {
-            if (window.elevenLabsAvatar?.running) {
-                window.elevenLabsAvatar.speak(context, trigger);
-            } else if (tries++ < 13) {
-                setTimeout(attempt, 300);
-            } else {
-                window.elevenLabsAvatar?.speak(context, trigger);
-            }
-        };
-        attempt();
+        const prompt = step === 'results' ? buildResultsPrompt(analysis) : STEP_PROMPTS[step];
+        if (!prompt) return;
+        // speak() queues the prompt if session not yet running; latest wins
+        window.elevenLabsAvatar?.speak(prompt.context, prompt.trigger);
     }
 
     // ── Wrap app lifecycle methods to inject voice guidance ───────────────

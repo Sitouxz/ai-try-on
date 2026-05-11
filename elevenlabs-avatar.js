@@ -13,6 +13,7 @@
     let _micMuted     = false;
     let _connectTime  = 0;   // timestamp of last onConnect
     let _autoRetries  = 0;   // brief-disconnect retries remaining
+    let _pendingSpeak = null; // queued speak call while session is connecting
 
     const $ = (id) => document.getElementById(id);
     const container = () => document.getElementById('aiAvatarContainer');
@@ -331,6 +332,12 @@
                     setStatus('Live', 'el-status-live');
                     updateControlState(true);
                     setTimeout(() => setMicUi(true), 600);
+                    // Flush any speak call that arrived while we were connecting
+                    if (_pendingSpeak) {
+                        const { context, trigger } = _pendingSpeak;
+                        _pendingSpeak = null;
+                        setTimeout(() => speak(context, trigger), 800);
+                    }
                 },
 
                 onDisconnect: () => {
@@ -385,10 +392,11 @@
     async function stopSession() {
         const conv = _conversation;
         _conversation = null;
-        _running     = false;
-        _starting    = false;
-        _micMuted    = false;
-        _autoRetries = 0;   // prevent auto-restart after deliberate stop
+        _running      = false;
+        _starting     = false;
+        _micMuted     = false;
+        _autoRetries  = 0;   // prevent auto-restart after deliberate stop
+        _pendingSpeak = null;
         setAvatarSpeaking(false);
         hideContainer();
         updateControlState(false);
@@ -417,6 +425,11 @@
     //            stay silent after a contextual update
     function speak(context, trigger) {
         if (!_running || !_conversation) {
+            // Session still connecting — queue so the agent speaks once live
+            if (_starting) {
+                _pendingSpeak = { context, trigger };
+                return;
+            }
             _speakFallback(context);
             return;
         }

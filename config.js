@@ -9,7 +9,7 @@ window.PHOTOBOOTH_CONFIG = {
     ELEVENLABS_INTERACTIVE: true,
 
     // Google Gemini — color analysis
-    GEMINI_API_KEY: 'AIzaSyDNPLLMue07muX24bij41MLuwWMblabqQI',
+    GEMINI_API_KEY: 'AIzaSyDlMoo1grENwQKs3l9nmsUQyW7ZhHRHWNY',
     GEMINI_MODEL: 'gemini-2.5-flash',
 };
 

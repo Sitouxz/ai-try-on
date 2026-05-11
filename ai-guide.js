@@ -12,34 +12,70 @@
 
     const proto = PhotoboothApp.prototype;
 
-    // ── Avatar step prompts ────────────────────────────────────────────────────
+    // ── Avatar step prompts + triggers ────────────────────────────────────────
+    // Each entry: { context, trigger }
+    // context → sent via sendContextualUpdate (gives the agent the data/instructions)
+    // trigger → sent via sendUserMessage right after, forcing the agent to respond
     const STEP_PROMPTS = {
-        camera: 'Please greet the user warmly and tell them to stand in the center of the frame, look straight at the camera, and press the capture button when they are ready.',
-        analyzing: 'Tell the user their photo looks great and that you are now analyzing their skin tone, undertone, and contrast. Ask them to hang tight for just a moment.',
-        aiOutfit: 'Tell the user their color analysis is complete and you have curated outfits that will complement their personal palette. Encourage them to browse the recommendations and select one to try on.',
-        result: 'Tell the user their virtual try-on looks amazing! Remind them they can download the photo, try a different outfit, or start a new color analysis.',
+        camera: {
+            context: 'The user has just arrived at the AI try-on kiosk. Greet them warmly. Tell them to stand in the center of the frame, look straight at the camera, and press the capture button when they are ready. Do NOT capture the photo yet — wait for the user to press the button or say they are ready.',
+            trigger: null,
+        },
+        // Used only when the user clicks the capture button (agent tool-return handles the voice path)
+        analyzing: {
+            context: 'The photo has been captured and is now being analyzed to identify the user\'s skin tone, undertone, and contrast so we can find the best outfit that matches their unique skin tone. Tell the user this and ask them to hold on for just a moment.',
+            trigger: 'My photo was just taken! What happens now?',
+        },
+        aiOutfit: {
+            context: 'The outfit selection screen is now showing. The outfits highlighted with a special badge are AI picks that best suit the user\'s personal skin tone and color season. Tell the user we have highlighted the outfits that best match their skin tone. They can choose our AI recommendation or freely pick any outfit they like.',
+            trigger: 'I can see the outfit selection screen now. Tell me about these recommendations.',
+        },
+        result: {
+            context: 'The virtual try-on result photo is now displayed. Tell the user their look is amazing! Remind them they can download the photo, choose a different outfit, or start a brand new color analysis.',
+            trigger: 'My try-on photo is ready! How does it look?',
+        },
     };
 
     function buildResultsPrompt(analysis) {
-        const season = analysis?.season || 'a beautiful season';
+        const season    = analysis?.season    || 'a unique season';
         const undertone = analysis?.undertone || '';
-        const top3 = (analysis?.palette || []).slice(0, 3).map(c => c.name).join(', ');
-        return `Tell the user their color analysis results are ready. Their personal color season is ${season}${undertone ? ` with a ${undertone} undertone` : ''}. ${top3 ? `Their top flattering colors are ${top3}.` : ''} Encourage them to scroll down to explore their full palette, outfit recommendations, and accessory suggestions, and invite them to ask any questions.`;
+        const skinTone  = analysis?.skinTone  || '';
+        const contrast  = analysis?.contrast  || '';
+        const summary   = analysis?.summary   || '';
+        const top3      = (analysis?.palette || []).slice(0, 3).map(c => c.name).join(', ');
+        const avoid3    = (analysis?.avoidColors || []).slice(0, 2).map(c => c.name).join(' and ');
+
+        const context = [
+            `The color analysis results are ready. Announce them enthusiastically.`,
+            skinTone  ? `The user's skin tone is ${skinTone}.` : '',
+            undertone ? `Their undertone is ${undertone}.` : '',
+            `Their personal color season is ${season}.`,
+            contrast  ? `Their contrast level is ${contrast}.` : '',
+            summary   ? `Style context: ${summary}` : '',
+            top3      ? `Their most flattering colors are ${top3} — mention all of these by name.` : '',
+            avoid3    ? `They should avoid ${avoid3} as those tend to wash them out.` : '',
+            `End by telling them to click the "Try On an Outfit" button to explore outfits curated for their skin tone.`,
+        ].filter(Boolean).join(' ');
+
+        return {
+            context,
+            trigger: 'My color analysis just finished! What are my results?',
+        };
     }
 
     function avatarSpeak(step, analysis = null) {
-        const prompt = step === 'results' ? buildResultsPrompt(analysis) : STEP_PROMPTS[step];
-        if (!prompt) return;
+        const entry   = step === 'results' ? buildResultsPrompt(analysis) : STEP_PROMPTS[step];
+        if (!entry) return;
+        const context = entry.context;
+        const trigger = entry.trigger || null;
         let tries = 0;
         const attempt = () => {
             if (window.elevenLabsAvatar?.running) {
-                window.elevenLabsAvatar.speak(prompt);
+                window.elevenLabsAvatar.speak(context, trigger);
             } else if (tries++ < 13) {
-                // Wait up to ~4s for ElevenLabs to connect, then fall through to TTS fallback
                 setTimeout(attempt, 300);
             } else {
-                // Session not up — speak() will use browser TTS fallback
-                window.elevenLabsAvatar?.speak(prompt);
+                window.elevenLabsAvatar?.speak(context, trigger);
             }
         };
         attempt();
@@ -72,7 +108,12 @@
         if (overlay) overlay.style.display = 'flex';
         if (overlayText) overlayText.textContent = 'Analyzing your colors…';
 
-        avatarSpeak('analyzing');
+        // When the agent called capture_photo, its tool-return already narrates the
+        // analyzing step.  Only speak here for the button-click path.
+        if (!this._agentTriggeredCapture) {
+            avatarSpeak('analyzing');
+        }
+        this._agentTriggeredCapture = false;
 
         try {
             const base64 = await this._dataUrlToBase64(this.capturedDataUrl);
@@ -166,6 +207,7 @@
             const analysis = JSON.parse(text);
             if (!analysis) throw new Error('Empty analysis payload.');
             this.lastAnalysis = analysis;
+            avatarSpeak('results', analysis);
             this.renderAiResults(analysis);
         } catch (err) {
             console.error('[ai-guide] analysis error:', err);
@@ -272,7 +314,7 @@
                 .join('');
         }
 
-        setTimeout(() => avatarSpeak('results', analysis), 800);
+        // avatarSpeak('results') is called in startAiAnalysis before this renders.
     };
 
     proto.showAiError = function (message) {
@@ -303,17 +345,6 @@
     };
 
     // ── AI Outfit Selection Flow ──────────────────────────────────────────
-    // Extract season from analysis result (handles "Soft Autumn", "Bright Spring", etc.)
-    function extractSeason(seasonString) {
-        if (!seasonString) return 'spring';
-        const lower = seasonString.toLowerCase();
-        if (lower.includes('spring')) return 'spring';
-        if (lower.includes('summer')) return 'summer';
-        if (lower.includes('autumn') || lower.includes('fall')) return 'autumn';
-        if (lower.includes('winter')) return 'winter';
-        return 'spring'; // default
-    }
-
     // Determine AI recommended outfits based on color analysis
     function getAiRecommendedIndices(analysis, totalOutfits) {
         // Use analysis data to deterministically pick "recommended" outfits
@@ -344,17 +375,9 @@
         // Initialize AI outfit selection state
         this.aiOutfitState = {
             gender: 'woman',
-            season: 'spring',
             category: 'top',
             selectedOutfitUrl: null
         };
-
-        // Detect season from color analysis if available
-        if (this.lastAnalysis?.season) {
-            const detectedSeason = extractSeason(this.lastAnalysis.season);
-            this.aiOutfitState.season = detectedSeason;
-            this.setAiSeasonTab(detectedSeason);
-        }
 
         // Render color analysis data
         this.renderColorAnalysis();
@@ -405,9 +428,6 @@
             t.classList.toggle('active', t.dataset.gender === this.aiOutfitState.gender);
         });
 
-        // Reset season tabs
-        this.setAiSeasonTab(this.aiOutfitState.season);
-
         // Reset category filters
         document.querySelectorAll('.ai-category-filter').forEach(f => {
             f.classList.toggle('active', f.dataset.category === this.aiOutfitState.category);
@@ -425,12 +445,6 @@
         if (sidebar) sidebar.style.display = 'flex';
     };
 
-    proto.setAiSeasonTab = function (season) {
-        document.querySelectorAll('.ai-season-tab').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.season === season);
-        });
-    };
-
     proto.initAiOutfitListeners = function () {
         // Gender tabs
         document.querySelectorAll('.ai-gender-tab').forEach(tab => {
@@ -438,16 +452,6 @@
                 document.querySelectorAll('.ai-gender-tab').forEach(t => t.classList.remove('active'));
                 e.target.classList.add('active');
                 this.aiOutfitState.gender = e.target.dataset.gender;
-                this.loadAiOutfitGrid();
-            });
-        });
-
-        // Season tabs
-        document.querySelectorAll('.ai-season-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                document.querySelectorAll('.ai-season-tab').forEach(t => t.classList.remove('active'));
-                e.target.classList.add('active');
-                this.aiOutfitState.season = e.target.dataset.season;
                 this.loadAiOutfitGrid();
             });
         });
@@ -474,9 +478,7 @@
         if (!grid) return;
 
         const { gender, category } = this.aiOutfitState;
-        // Map gender to correct folder name ('woman' -> 'woman', 'men' -> 'man')
-        const folderName = gender === 'men' ? 'man' : gender;
-        const folderPath = `assets/${folderName}/${category}/`;
+        const folderPath = `assets/${gender}/${category}/`;
 
         grid.innerHTML = '<div class="loading-message">Loading recommended outfits...</div>';
 

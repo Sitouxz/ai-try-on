@@ -1450,13 +1450,14 @@ body {
     pointer-events: none;
 }
 
-/* Chroma-keyed canvas — right-anchored, scaled up, left empty space clips */
+/* Chroma-keyed canvas — 9:16 portrait, anchored to bottom-right */
 .el-avatar-canvas {
     position: absolute;
     bottom: 0;
     right: 0;
     height: 80%;
     width: auto;
+    aspect-ratio: 9 / 16;
     pointer-events: none;
     background: transparent;
 }
@@ -1491,14 +1492,14 @@ body {
 .el-caption {
     position: absolute;
     bottom: 120px;
-    right: calc(100% + 14px);
+    right: calc(100% - 60px);
     left: auto;
     width: 280px;
     padding: 20px 20px 16px;
     background: #fff;
     border-radius: 18px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.10);
-    pointer-events: auto;
+    pointer-events: none;
     opacity: 0;
     transform: translateY(8px);
     transition: opacity 0.35s ease, transform 0.35s ease;
@@ -1507,6 +1508,7 @@ body {
 .el-caption.caption-visible {
     opacity: 1;
     transform: translateY(0);
+    pointer-events: auto;
 }
 
 .el-caption-title {

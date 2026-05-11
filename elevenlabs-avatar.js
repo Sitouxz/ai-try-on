@@ -17,30 +17,22 @@
     const $ = (id) => document.getElementById(id);
     const container = () => document.getElementById('aiAvatarContainer');
 
-    // ── WebGL white-screen chroma-key ─────────────────────────────────────────
-    // Removes near-white pixels: min(r,g,b) > 0.72 → transparent.
-    // The light-blue suit has min ≈ 0.59, safely below threshold.
+    // ── WebGL green-screen chroma-key ─────────────────────────────────────────
+    // Keys on rgb(35, 255, 0): removes pixels where green dominates red and blue.
     const VERT_SRC = `
         attribute vec2 a_pos;
         attribute vec2 a_uv;
         varying vec2 v_uv;
         void main() { gl_Position = vec4(a_pos, 0.0, 1.0); v_uv = a_uv; }
     `;
-    // Tuning knobs (all in GLSL below):
-    //   SAT_MULT 6.0  — higher = better preserve light-colored / near-white clothes
-    //   smoothstep lo 0.92  — raise to keep more near-white areas; lower to cut more bg
-    //   smoothstep hi 1.0   — leave at 1.0 (pure white = fully removed)
     const FRAG_SRC = `
         precision mediump float;
         uniform sampler2D u_tex;
         varying vec2 v_uv;
         void main() {
             vec4 c = texture2D(u_tex, v_uv);
-            float maxC = max(c.r, max(c.g, c.b));
-            float minC = min(c.r, min(c.g, c.b));
-            float sat = (maxC > 0.001) ? (maxC - minC) / maxC : 0.0;
-            float whiteness = maxC * (1.0 - sat * 6.0);
-            float a = 1.0 - smoothstep(0.92, 1.0, whiteness);
+            float greenness = c.g - max(c.r, c.b);
+            float a = 1.0 - smoothstep(0.25, 0.45, greenness);
             gl_FragColor = vec4(c.rgb * a, a);
         }
     `;
@@ -265,7 +257,11 @@
             const app = window.photoboothApp;
             if (!app) return 'App not initialised.';
             if (!app.cameraStream) return 'Camera not ready — please wait a moment.';
+            app._agentTriggeredCapture = true;
             app.capturePhoto();
+            if (app.mode === 'ai') {
+                return 'Photo captured successfully. Color analysis is now starting to discover the user\'s personal color profile — skin tone, undertone, and contrast — so we can find outfits that best match their unique skin tone. Tell the user their photo is being analyzed and ask them to hold on for just a moment.';
+            }
             return 'Countdown started. Smile!';
         },
         get_app_state: async () => {
@@ -415,23 +411,29 @@
     }
 
     // ── Speak ─────────────────────────────────────────────────────────────────
-    function speak(text) {
-        showCaption(text);
+    // context  — injected via sendContextualUpdate so the agent has the data
+    // trigger  — short user-side message sent via sendUserMessage to force the
+    //            agent to respond using that context; without it the agent may
+    //            stay silent after a contextual update
+    function speak(context, trigger) {
         if (!_running || !_conversation) {
-            _speakFallback(text);
+            _speakFallback(context);
             return;
         }
         try {
-            if (typeof _conversation.sendUserMessage === 'function') {
-                _conversation.sendUserMessage(text);
-            } else if (typeof _conversation.sendContextualUpdate === 'function') {
-                _conversation.sendContextualUpdate(text);
-            } else {
-                _speakFallback(text);
+            if (typeof _conversation.sendContextualUpdate === 'function') {
+                _conversation.sendContextualUpdate(context);
+            }
+            if (trigger && typeof _conversation.sendUserMessage === 'function') {
+                _conversation.sendUserMessage(trigger);
+            } else if (!trigger && typeof _conversation.sendUserMessage === 'function') {
+                // No trigger supplied — context only; agent may not speak proactively
+            } else if (typeof _conversation.sendContextualUpdate !== 'function') {
+                _speakFallback(context);
             }
         } catch (e) {
             console.warn('[el-avatar] speak failed:', e);
-            _speakFallback(text);
+            _speakFallback(context);
         }
     }
 

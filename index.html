@@ -264,17 +264,29 @@
                         <div class="ai-gender-tabs" id="aiGenderTabs">
                             <button class="ai-gender-tab active" data-gender="woman">WOMAN</button>
                             <button class="ai-gender-tab" data-gender="men">MEN</button>
+                            <button class="ai-gender-tab" data-gender="upload">UPLOAD</button>
                         </div>
-                        
+
                         <!-- Category Filters -->
-                        <div class="ai-category-filters">
+                        <div class="ai-category-filters" id="aiCategoryFilters">
                             <button class="ai-category-filter active" data-category="top">TOP</button>
                             <button class="ai-category-filter" data-category="bottom">BOTTOM</button>
                         </div>
-                        
+
                         <!-- AI Outfit Grid -->
                         <div class="ai-outfit-grid" id="aiOutfitGrid">
                             <div class="loading-message">Loading recommended outfits...</div>
+                        </div>
+
+                        <!-- Upload Area (shown when UPLOAD tab is active) -->
+                        <div class="upload-area" id="aiUploadArea" style="display:none">
+                            <div class="upload-dropzone" id="aiUploadDropzone">
+                                <div class="upload-icon">📁</div>
+                                <p class="upload-text">Drag & drop your outfit image here</p>
+                                <p class="upload-or">or</p>
+                                <button class="btn-upload" id="aiUploadButton">Choose File</button>
+                                <input type="file" id="aiUploadInput" accept="image/*" style="display:none">
+                            </div>
                         </div>
                         
                         <!-- AI Try On Button -->

@@ -432,6 +432,25 @@
         // Reset sidebar visibility
         const sidebar = document.getElementById('aiOutfitSidebar');
         if (sidebar) sidebar.style.display = 'flex';
+
+        // Ensure grid/category visible, upload area hidden (default state)
+        const grid = document.getElementById('aiOutfitGrid');
+        const uploadArea = document.getElementById('aiUploadArea');
+        const categoryFilters = document.getElementById('aiCategoryFilters');
+        if (grid) grid.style.display = 'grid';
+        if (categoryFilters) categoryFilters.style.display = 'flex';
+        if (uploadArea) uploadArea.style.display = 'none';
+
+        // Reset upload dropzone content
+        const dropzone = document.getElementById('aiUploadDropzone');
+        if (dropzone) {
+            dropzone.innerHTML = `
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">Drag & drop your outfit image here</p>
+                <p class="upload-or">or</p>
+                <button class="btn-upload" id="aiUploadButton">Choose File</button>
+                <input type="file" id="aiUploadInput" accept="image/*" style="display:none">`;
+        }
     };
 
     proto.initAiOutfitListeners = function () {
@@ -441,7 +460,7 @@
                 document.querySelectorAll('.ai-gender-tab').forEach(t => t.classList.remove('active'));
                 e.target.classList.add('active');
                 this.aiOutfitState.gender = e.target.dataset.gender;
-                this.loadAiOutfitGrid();
+                this.switchAiOutfitMode(e.target.dataset.gender);
             });
         });
 
@@ -460,6 +479,80 @@
         if (tryOnBtn) {
             tryOnBtn.addEventListener('click', () => this.handleAiTryOn());
         }
+
+        // Upload listeners — delegated on stable container so they survive dropzone HTML resets
+        const uploadArea = document.getElementById('aiUploadArea');
+        const uploadDropzone = document.getElementById('aiUploadDropzone');
+
+        uploadArea?.addEventListener('click', (e) => {
+            if (e.target.id === 'aiUploadButton' || e.target === uploadDropzone) {
+                document.getElementById('aiUploadInput')?.click();
+            }
+        });
+        uploadArea?.addEventListener('change', (e) => {
+            if (e.target.id === 'aiUploadInput') this.handleAiFileSelect(e);
+        });
+        uploadDropzone?.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadDropzone.classList.add('drag-over');
+        });
+        uploadDropzone?.addEventListener('dragleave', () => {
+            uploadDropzone.classList.remove('drag-over');
+        });
+        uploadDropzone?.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadDropzone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file) this.processAiUploadedFile(file);
+        });
+    };
+
+    proto.switchAiOutfitMode = function (gender) {
+        const grid = document.getElementById('aiOutfitGrid');
+        const uploadArea = document.getElementById('aiUploadArea');
+        const categoryFilters = document.getElementById('aiCategoryFilters');
+
+        if (gender === 'upload') {
+            if (grid) grid.style.display = 'none';
+            if (categoryFilters) categoryFilters.style.display = 'none';
+            if (uploadArea) uploadArea.style.display = 'flex';
+            // Clear any previously selected outfit
+            this.aiOutfitState.selectedOutfitUrl = null;
+            this.selectedOutfitUrl = null;
+            const tryOnBtn = document.getElementById('aiTryOnSelectedBtn');
+            if (tryOnBtn) { tryOnBtn.disabled = true; tryOnBtn.innerHTML = '<span>Try On</span>'; }
+        } else {
+            if (grid) grid.style.display = 'grid';
+            if (categoryFilters) categoryFilters.style.display = 'flex';
+            if (uploadArea) uploadArea.style.display = 'none';
+            this.loadAiOutfitGrid();
+        }
+    };
+
+    proto.handleAiFileSelect = function (e) {
+        const file = e.target.files[0];
+        if (file) this.processAiUploadedFile(file);
+    };
+
+    proto.processAiUploadedFile = function (file) {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const imageUrl = e.target.result;
+            this.aiOutfitState.selectedOutfitUrl = imageUrl;
+            this.selectedOutfitUrl = imageUrl;
+
+            const dropzone = document.getElementById('aiUploadDropzone');
+            if (dropzone) {
+                dropzone.innerHTML = `<img src="${imageUrl}" style="max-width:100%;max-height:200px;border-radius:8px;object-fit:contain;">
+                    <p class="upload-or" style="margin-top:8px;font-size:0.8rem;opacity:0.7">Tap to change</p>`;
+                dropzone.onclick = () => document.getElementById('aiUploadInput')?.click();
+            }
+
+            const tryOnBtn = document.getElementById('aiTryOnSelectedBtn');
+            if (tryOnBtn) { tryOnBtn.disabled = false; tryOnBtn.innerHTML = '<span>Try On</span>'; }
+        };
+        reader.readAsDataURL(file);
     };
 
     proto.loadAiOutfitGrid = async function () {

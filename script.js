@@ -410,7 +410,7 @@ class PhotoboothApp {
                     console.log(`[scanFolder] API: ${images.length} images in ${folder}`);
                     return images.map(filename => ({
                         filename,
-                        url: `assets/${folder}/${encodeURIComponent(filename)}`,
+                        url: `/assets/${folder}/${encodeURIComponent(filename)}`,
                     }));
                 }
             } catch (err) {
@@ -422,7 +422,7 @@ class PhotoboothApp {
         const candidates = Array.from({ length: 20 }, (_, i) => `image ${i + 1}.png`);
         const results = await Promise.all(candidates.map(filename => new Promise(resolve => {
             const img = new Image();
-            const url = `assets/${folder}/${encodeURIComponent(filename)}`;
+            const url = `/assets/${folder}/${encodeURIComponent(filename)}`;
             img.onload  = () => resolve({ filename, url });
             img.onerror = () => resolve(null);
             img.src = url;

@@ -1,0 +1,19 @@
+{
+  "name": "chromame-portrait",
+  "version": "1.0.0",
+  "description": "Mobile portrait version of ChromaMe AI Photobooth",
+  "main": "index.html",
+  "scripts": {
+    "dev": "cd .. && npm run dev",
+    "start": "cd .. && npm start"
+  },
+  "keywords": [
+    "ai",
+    "photobooth",
+    "color-analysis",
+    "virtual-try-on",
+    "mobile"
+  ],
+  "author": "",
+  "license": "MIT"
+}

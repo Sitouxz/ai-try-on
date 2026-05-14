@@ -1,0 +1,1639 @@
+/* ============================================================
+   PORTRAIT MODE — Figma-accurate standalone CSS
+   Design canvas: 1080 × 1920 (9:16)
+   --px = 1 design pixel (horizontal)
+   --py = 1 design pixel (vertical)
+   ============================================================ */
+
+:root {
+    --px: calc(100vw / 1080);
+    --py: calc(100vh / 1920);
+    --red:   #cf242d;
+    --pink:  #f85096;
+    --dark:  #1e1e1e;
+    --grad:  linear-gradient(90deg, #cf242d 0%, #f85096 100%);
+    --shadow-card: 0 3px 3.4px rgba(0,0,0,.15), 0 3px 6.25px rgba(0,0,0,.15);
+    --frame-border: #d12633;
+    --frame-w: calc(960 * var(--px));
+    --frame-h: calc(1418 * var(--px));
+    --frame-cx: 50%;          /* horizontal center */
+    --frame-cy: calc(934 * var(--px)); /* vertical center from top */
+}
+
+/* ─── Reset & base ─────────────────────────────────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body.portrait-mode {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #ffffff;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+img { display: block; }
+
+/* ─── Gradient text utility ────────────────────────────────── */
+.p-grad-text {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+/* ─── App hidden/visible ────────────────────────────────────── */
+.app-hidden { display: none !important; }
+.app-visible { display: block !important; }
+
+/* ─── Base screen ───────────────────────────────────────────── */
+.p-screen {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+
+/* ============================================================
+   LANDING SCREEN — Figma Frame 281
+   ============================================================ */
+
+.p-landing {
+    background: #ffffff;
+    display: block;
+}
+
+/* Decorative arc/circles (Group705) — top, centered */
+.p-landing-circles {
+    position: absolute;
+    top: calc(-1172 * var(--px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(1612 * var(--px));
+    height: calc(1603 * var(--px));
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Halftone dot wave — scaleY(-1) to flip, anchored at bottom */
+.p-landing-wave {
+    position: absolute;
+    bottom: calc(-438 * var(--px));
+    left: 50%;
+    transform: translateX(-50%) scaleY(-1);
+    width: calc(2078 * var(--px));
+    height: calc(1777 * var(--px));
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Model photo — bottom center */
+.p-landing-model {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(909 * var(--px));
+    height: calc(1364 * var(--px));
+    object-fit: cover;
+    object-position: top center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Title — Figma: 140px Inter ExtraBold, top 395px, centered, w 969px */
+.p-landing-title {
+    position: absolute;
+    top: calc(320 * var(--px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(969 * var(--px));
+    font-size: calc(140 * var(--px));
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: calc(-4.2 * var(--px));
+    color: var(--dark);
+    text-align: center;
+    z-index: 3;
+}
+
+/* Bottom section — pushed lower for better spacing */
+.p-landing-bottom {
+    position: absolute;
+    top: calc(1670 * var(--px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(655 * var(--px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(40 * var(--px));
+    z-index: 4;
+}
+
+/* Subtitle bar — gradient fade left/right, h 49px */
+.p-subtitle-bar {
+    position: relative;
+    width: 100%;
+    height: calc(49 * var(--px));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0) 2.82%,
+        rgba(201,201,201,0.35) 12.34%,
+        rgb(150,150,150) 27.08%,
+        rgb(150,150,150) 71.47%,
+        rgba(201,201,201,0.35) 87.95%,
+        rgba(255,255,255,0) 98.02%
+    );
+    border-radius: calc(4 * var(--px));
+    flex-shrink: 0;
+}
+
+.p-subtitle-text {
+    font-size: calc(24 * var(--px));
+    font-weight: 400;
+    color: #ffffff;
+    text-align: center;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+}
+
+/* Cards row — gap 50px */
+.p-cards {
+    display: flex;
+    gap: calc(50 * var(--px));
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Card — 282×160px, white, rounded-20, shadow */
+.p-card {
+    background: #ffffff;
+    border-radius: calc(20 * var(--px));
+    width: calc(282 * var(--px));
+    height: calc(160 * var(--px));
+    padding: calc(20 * var(--px)) calc(30 * var(--px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(20 * var(--px));
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.p-card:hover {
+    transform: translateY(calc(-4 * var(--px)));
+    box-shadow: 0 calc(8 * var(--px)) calc(16 * var(--px)) rgba(0,0,0,.18),
+                0 calc(8 * var(--px)) calc(24 * var(--px)) rgba(207,36,45,.15);
+}
+.p-card:active { transform: translateY(calc(-2 * var(--px))) scale(0.98); }
+
+/* Card icon — 75×75px, show SVG as-is */
+.p-card-icon {
+    width: calc(75 * var(--px));
+    height: calc(75 * var(--px));
+    object-fit: contain;
+}
+
+/* Card label — 24px Inter Regular, tracking 1.2px */
+.p-card-label {
+    font-size: calc(24 * var(--px));
+    font-weight: 400;
+    letter-spacing: calc(1.2 * var(--px));
+    text-align: center;
+    white-space: nowrap;
+    line-height: normal;
+    /* gradient applied via .p-grad-text */
+}
+
+
+/* ============================================================
+   CAMERA SCREENS — Figma Frames 282, 289, 297, result
+   ============================================================ */
+
+.p-camera-screen {
+    background: transparent;
+}
+
+/* ── Background decorative elements ─────────────────────── */
+
+/* Group711: top-left decorative circles, 800×800px at (-520,-134) */
+.p-bg-711 {
+    position: absolute;
+    left: calc(-520 * var(--px));
+    top: calc(-134 * var(--px));
+    width: calc(800 * var(--px));
+    height: calc(800 * var(--px));
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Group710: middle-right decorative circles, rotated -9.76deg */
+.p-bg-710 {
+    position: absolute;
+    left: calc(230 * var(--px));
+    top: calc(61 * var(--px));
+    width: calc(1265 * var(--px));
+    height: calc(1312 * var(--px));
+    transform: rotate(-9.76deg);
+    transform-origin: center center;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Group705: bottom-center decorative circles */
+.p-bg-705 {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    /* center at 75%+164px from top = (0.75*1920+164) = 1604px */
+    /* top of element = 1604 - 1189/2 = 1604 - 594.5 = 1009.5px */
+    top: calc(1009 * var(--px));
+    width: calc(1196 * var(--px));
+    height: calc(1189 * var(--px));
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Camera/photo frame ──────────────────────────────────── */
+/* Figma: 960×1418px, centered, center at top 37.5%+214px of 1920
+   In design px: center_y = 0.375*1920+214 = 934px
+   top_edge = 934 - 709 = 225px */
+.p-photo-frame {
+    position: absolute;
+    left: 50%;
+    top: calc(225 * var(--px));
+    transform: translateX(-50%);
+    width: var(--frame-w);
+    height: var(--frame-h);
+    border: calc(10 * var(--px)) solid var(--frame-border);
+    border-radius: calc(20 * var(--px));
+    overflow: hidden;
+    background: #d9d9d9;
+    z-index: 5;
+}
+
+.p-photo-frame video,
+.p-photo-frame img,
+.p-photo-frame .p-processing-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+/* Camera hint text — centered in frame */
+.p-camera-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: calc(32 * var(--px));
+    font-weight: 400;
+    color: #ffffff;
+    text-align: center;
+    white-space: nowrap;
+    text-shadow: 0 0 15px black, 0 2px 10px black;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Dark overlay on camera (55% multiply — only on live camera feed) */
+#cameraWrapper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(64,64,64,0.55);
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ── Screen header (mode title) ──────────────────────────── */
+.p-screen-header {
+    position: absolute;
+    top: calc(30 * var(--px));
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.p-screen-title {
+    font-size: calc(40 * var(--px));
+    font-weight: 700;
+    color: var(--dark);
+    text-align: center;
+}
+
+/* ── Step dots (hidden by default, JS controls) ──────────── */
+.p-step-indicator {
+    position: absolute;
+    top: calc(100 * var(--px));
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(12 * var(--px));
+    z-index: 10;
+}
+
+.p-dot {
+    width: calc(10 * var(--px));
+    height: calc(10 * var(--px));
+    border-radius: 50%;
+    background: rgba(207,36,45,0.3);
+    transition: background 0.2s;
+}
+.p-dot.active { background: var(--red); }
+.p-dot.done   { background: var(--pink); }
+
+/* ── Countdown overlay (inside camera frame) ─────────────── */
+.p-countdown {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(24 * var(--px));
+    background: rgba(0,0,0,0.35);
+    z-index: 3;
+}
+
+.p-countdown-circle {
+    width: calc(180 * var(--px));
+    height: calc(180 * var(--px));
+    border-radius: 50%;
+    background: var(--grad);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.p-countdown-num {
+    font-size: calc(96 * var(--px));
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1;
+}
+
+.p-countdown-label {
+    font-size: calc(28 * var(--px));
+    font-weight: 400;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+/* ── Loading overlay (inside capturedPreview) ────────────── */
+.p-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(24 * var(--px));
+    z-index: 3;
+}
+
+.p-loading-spinner {
+    width: calc(60 * var(--px));
+    height: calc(60 * var(--px));
+    border: calc(4 * var(--px)) solid rgba(255,255,255,0.2);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: p-spin 0.8s linear infinite;
+}
+
+.loading-text {
+    font-size: calc(28 * var(--px));
+    color: #ffffff;
+    font-weight: 500;
+}
+
+@keyframes p-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Tooltip (Figma Frame 282 shutter guide) ─────────────── */
+/* Centered above capture button (controls start at 1660px, tooltip ~240px tall) */
+.p-tooltip {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: calc(1400 * var(--px));
+    z-index: 26;
+    width: calc(486 * var(--px));
+    filter: drop-shadow(0 calc(4 * var(--px)) calc(16 * var(--px)) rgba(0,0,0,.15));
+}
+
+.p-tooltip-inner {
+    background: #ffffff;
+    border-radius: calc(16 * var(--px));
+    padding: calc(28 * var(--px)) calc(30 * var(--px)) calc(24 * var(--px));
+    display: flex;
+    flex-direction: column;
+    gap: calc(10 * var(--px));
+}
+
+.p-tooltip-title {
+    font-size: calc(32 * var(--px));
+    font-weight: 700;
+    /* gradient text via .p-grad-text */
+}
+
+.p-tooltip-body {
+    font-size: calc(24 * var(--px));
+    font-weight: 400;
+    color: var(--dark);
+    line-height: 1.33;
+    letter-spacing: calc(0.72 * var(--px));
+}
+
+.p-tooltip-ok {
+    align-self: flex-end;
+    background: var(--grad);
+    color: #ffffff;
+    font-size: calc(20 * var(--px));
+    font-weight: 700;
+    letter-spacing: calc(1 * var(--px));
+    text-transform: uppercase;
+    padding: calc(12 * var(--px)) calc(36 * var(--px));
+    border-radius: calc(180 * var(--px));
+    box-shadow: -2px 3px 8px 0 rgba(0,0,0,.15);
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.p-tooltip-ok:hover { opacity: 0.85; }
+
+.p-tooltip-arrow {
+    width: 0;
+    height: 0;
+    margin: 0 auto;
+    border-left: calc(12 * var(--px)) solid transparent;
+    border-right: calc(12 * var(--px)) solid transparent;
+    border-top: calc(14 * var(--px)) solid #ffffff;
+}
+
+/* ── Camera guide model (right side) ────────────────────── */
+.p-camera-guide {
+    display: none;
+    position: absolute;
+    right: calc(-204 * var(--px));
+    top: 50%;
+    transform: translateY(calc(-50% + 161.5 * var(--px)));
+    width: calc(744 * var(--px));
+    height: calc(1117 * var(--px));
+    object-fit: cover;
+    pointer-events: none;
+    z-index: 4;
+}
+
+/* ── Bottom camera controls ──────────────────────────────── */
+/* Positioned below the camera frame */
+.p-camera-controls {
+    position: absolute;
+    /* Frame bottom edge = 225 + 1418 = 1643px, controls start ~1670px */
+    top: calc(1660 * var(--px));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(20 * var(--px));
+    z-index: 25;
+    width: calc(715 * var(--px));
+}
+
+/* Capture button — circular with icon */
+.p-capture-btn {
+    width: calc(192 * var(--px));
+    height: calc(192 * var(--px));
+    border-radius: 50%;
+    border: calc(4.5 * var(--px)) solid #ffffff;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 calc(4 * var(--px)) calc(16 * var(--px)) rgba(0,0,0,.2);
+    transition: transform 0.15s ease;
+    padding: calc(16 * var(--px));
+}
+.p-capture-btn img {
+    width: calc(100 * var(--px));
+    height: calc(78 * var(--px));
+    object-fit: contain;
+}
+.p-capture-btn:hover  { transform: scale(1.05); }
+.p-capture-btn:active { transform: scale(0.96); }
+
+/* Retake button */
+.p-retake-btn {
+    display: flex;
+    align-items: center;
+    gap: calc(12 * var(--px));
+    font-size: calc(28 * var(--px));
+    font-weight: 600;
+    color: var(--dark);
+    background: rgba(255,255,255,0.9);
+    border-radius: calc(180 * var(--px));
+    padding: calc(14 * var(--px)) calc(32 * var(--px));
+    box-shadow: var(--shadow-card);
+    transition: opacity 0.15s;
+}
+.p-retake-btn:hover { opacity: 0.8; }
+
+/* Post-capture action buttons — Figma Frame 289 style */
+.p-after-controls {
+    display: flex;
+    gap: calc(34 * var(--px));
+    align-items: stretch;
+    width: 100%;
+}
+
+.p-action-btn {
+    flex: 1;
+    height: calc(72 * var(--px));
+    border-radius: calc(180 * var(--px));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(15 * var(--px));
+    font-size: calc(24 * var(--px));
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.15s;
+    padding: 0 calc(20 * var(--px));
+}
+.p-action-btn:hover  { opacity: 0.85; }
+.p-action-btn:active { transform: scale(0.97); }
+
+.p-action-outline {
+    background: #ffffff;
+    border: calc(2 * var(--px)) solid #cccccc;
+    /* text handled by .p-grad-text on child span */
+}
+
+.p-action-fill {
+    background: var(--grad);
+    color: #ffffff;
+    border: none;
+}
+
+.p-action-icon {
+    width: calc(34 * var(--px));
+    height: calc(34 * var(--px));
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* ── Outfit sidebar (bottom sheet) ───────────────────────── */
+.p-outfit-sidebar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: calc(24 * var(--px)) calc(24 * var(--px)) 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 calc(-4 * var(--px)) calc(30 * var(--px)) rgba(0,0,0,.2);
+    display: flex;
+    flex-direction: column;
+    padding: calc(20 * var(--px)) calc(24 * var(--px)) calc(24 * var(--px));
+    gap: calc(16 * var(--px));
+    max-height: 55vh;
+    overflow: hidden;
+    z-index: 20;
+}
+
+.p-sidebar-top {
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--px));
+    flex-shrink: 0;
+}
+
+/* Tabs (gender/AI gender) */
+.p-sidebar-tabs {
+    display: flex;
+    gap: calc(8 * var(--px));
+}
+
+.gender-tab,
+.ai-gender-tab {
+    flex: 1;
+    padding: calc(10 * var(--px)) 0;
+    border-radius: calc(12 * var(--px));
+    font-size: calc(22 * var(--px));
+    font-weight: 600;
+    letter-spacing: calc(0.5 * var(--px));
+    color: rgba(0,0,0,0.7);
+    background: rgba(255,255,255,0.2);
+    border: calc(1.5 * var(--px)) solid rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.gender-tab.active,
+.ai-gender-tab.active {
+    background: var(--grad);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+/* Category filters */
+.p-category-row {
+    display: flex;
+    gap: calc(8 * var(--px));
+}
+
+.category-filter,
+.ai-category-filter {
+    flex: 0 0 auto;
+    padding: calc(8 * var(--px)) calc(24 * var(--px));
+    border-radius: calc(180 * var(--px));
+    font-size: calc(20 * var(--px));
+    font-weight: 600;
+    color: rgba(0,0,0,0.7);
+    background: rgba(255,255,255,0.2);
+    border: calc(1.5 * var(--px)) solid rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.category-filter.active,
+.ai-category-filter.active {
+    background: var(--grad);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+/* Upload area */
+.p-upload-area {
+    flex: 1;
+    overflow-y: auto;
+}
+.p-dropzone {
+    border: calc(2 * var(--px)) dashed rgba(255,255,255,0.4);
+    border-radius: calc(16 * var(--px));
+    padding: calc(24 * var(--px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(10 * var(--px));
+    cursor: pointer;
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    transition: border-color 0.15s;
+}
+.p-dropzone.drag-over { border-color: #fff; background: rgba(255,255,255,0.2); }
+.p-upload-icon { font-size: calc(40 * var(--px)); }
+.upload-text { font-size: calc(22 * var(--px)); color: rgba(0,0,0,0.75); font-weight: 500; }
+.p-upload-or { font-size: calc(18 * var(--px)); color: rgba(0,0,0,0.5); }
+.p-btn-upload {
+    background: var(--grad);
+    color: #ffffff;
+    border-radius: calc(180 * var(--px));
+    padding: calc(10 * var(--px)) calc(28 * var(--px));
+    font-size: calc(20 * var(--px));
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Sidebar outfit grid */
+.sidebar-outfit-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(12 * var(--px));
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.sidebar-outfit-option {
+    aspect-ratio: 3/4;
+    border-radius: calc(12 * var(--px));
+    overflow: hidden;
+    cursor: pointer;
+    border: calc(2 * var(--px)) solid transparent;
+    transition: border-color 0.15s, transform 0.15s;
+}
+.sidebar-outfit-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.sidebar-outfit-option.selected {
+    border-color: var(--red);
+    transform: scale(0.96);
+}
+.sidebar-outfit-option:hover { border-color: rgba(207,36,45,0.4); }
+
+/* Try on / primary button */
+.p-btn-primary {
+    background: var(--grad);
+    color: #ffffff;
+    border-radius: calc(180 * var(--px));
+    font-size: calc(24 * var(--px));
+    font-weight: 700;
+    letter-spacing: calc(1 * var(--px));
+    text-transform: uppercase;
+    padding: calc(18 * var(--px)) calc(48 * var(--px));
+    cursor: pointer;
+    transition: opacity 0.15s;
+    text-align: center;
+    border: none;
+    flex-shrink: 0;
+}
+.p-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.p-btn-primary:not(:disabled):hover { opacity: 0.88; }
+
+.p-btn-ghost {
+    background: transparent;
+    color: rgba(0,0,0,0.6);
+    border: calc(1.5 * var(--px)) solid rgba(0,0,0,0.2);
+    border-radius: calc(180 * var(--px));
+    font-size: calc(22 * var(--px));
+    font-weight: 500;
+    padding: calc(14 * var(--px)) calc(28 * var(--px));
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.p-btn-ghost:hover { opacity: 0.7; }
+
+.p-try-btn {
+    width: 100%;
+    flex-shrink: 0;
+}
+
+
+/* ============================================================
+   STEP 2: Outfit Selection (full grid view)
+   ============================================================ */
+
+.p-step2 {
+    background: linear-gradient(180deg, #fef3f5 0%, #fce7f3 100%);
+    display: flex;
+    flex-direction: column;
+    padding: calc(40 * var(--px)) calc(32 * var(--px)) calc(32 * var(--px));
+    gap: calc(24 * var(--px));
+}
+
+.p-step2-header {
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.p-step2-title {
+    font-size: calc(48 * var(--px));
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: calc(8 * var(--px));
+}
+
+.p-step2-sub {
+    font-size: calc(24 * var(--px));
+    color: rgba(0,0,0,0.5);
+}
+
+.p-step2-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: calc(20 * var(--px));
+    overflow: hidden;
+}
+
+.p-person-thumb {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(8 * var(--px));
+}
+.p-person-thumb img {
+    width: calc(120 * var(--px));
+    height: calc(160 * var(--px));
+    object-fit: cover;
+    border-radius: calc(12 * var(--px));
+    border: calc(2 * var(--px)) solid rgba(207,36,45,0.3);
+}
+.p-thumb-label {
+    font-size: calc(18 * var(--px));
+    color: rgba(0,0,0,0.5);
+}
+
+.outfit-grid {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.outfit-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(12 * var(--px));
+}
+
+.outfit-option {
+    aspect-ratio: 3/4;
+    border-radius: calc(12 * var(--px));
+    overflow: hidden;
+    cursor: pointer;
+    border: calc(2 * var(--px)) solid transparent;
+    transition: border-color 0.15s;
+}
+.outfit-option img { width: 100%; height: 100%; object-fit: cover; }
+.outfit-option.selected { border-color: var(--red); }
+.outfit-name {
+    font-size: calc(16 * var(--px));
+    color: rgba(0,0,0,0.5);
+    text-align: center;
+    padding: calc(4 * var(--px));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.p-step2-controls {
+    flex-shrink: 0;
+    display: flex;
+    gap: calc(16 * var(--px));
+    justify-content: center;
+    padding-top: calc(8 * var(--px));
+}
+
+
+/* ============================================================
+   STEP 3: Processing — Figma Frame 297
+   ============================================================ */
+
+.p-processing-frame {
+    position: absolute;
+    left: 50%;
+    top: calc(225 * var(--px));
+    transform: translateX(-50%);
+}
+
+.p-processing-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(25 * var(--px));
+    z-index: 2;
+}
+
+.p-spinner-wrap {
+    display: none;
+}
+
+.p-spin-arc {
+    display: none;
+}
+
+.p-spin-dot {
+    display: none;
+}
+
+.p-processing-text {
+    font-size: calc(32 * var(--px));
+    font-weight: 400;
+    color: #ffffff;
+    text-align: center;
+    text-shadow: 0 0 15px black, 0 2px 10px black;
+    white-space: nowrap;
+}
+
+
+/* ============================================================
+   STEP AI: Color Analysis Results
+   ============================================================ */
+
+.p-ai-results {
+    background: linear-gradient(180deg, #fef3f5 0%, #fce7f3 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.p-page-title {
+    flex-shrink: 0;
+    font-size: calc(48 * var(--px));
+    font-weight: 800;
+    color: var(--dark);
+    text-align: center;
+    padding: calc(40 * var(--px)) calc(32 * var(--px)) calc(16 * var(--px));
+}
+
+.p-ai-layout {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: calc(20 * var(--px));
+    overflow: hidden;
+    padding: 0 calc(32 * var(--px)) calc(32 * var(--px));
+}
+
+.p-ai-side {
+    display: flex;
+    flex-direction: row;
+    gap: calc(16 * var(--px));
+    flex-shrink: 0;
+    align-items: flex-start;
+}
+
+.p-ai-photo img {
+    width: calc(140 * var(--px));
+    height: calc(180 * var(--px));
+    object-fit: cover;
+    border-radius: calc(16 * var(--px));
+    border: calc(2 * var(--px)) solid rgba(207,36,45,0.3);
+    flex-shrink: 0;
+}
+
+.p-ai-meta-card {
+    flex: 1;
+    background: #ffffff;
+    border-radius: calc(16 * var(--px));
+    padding: calc(16 * var(--px)) calc(20 * var(--px));
+    box-shadow: var(--shadow-card);
+}
+
+.p-ai-meta { display: flex; flex-direction: column; gap: calc(8 * var(--px)); }
+.p-ai-meta-row { display: flex; justify-content: space-between; align-items: center; }
+.p-ai-meta-label { font-size: calc(20 * var(--px)); color: rgba(0,0,0,0.45); font-weight: 500; }
+.p-ai-meta-val   { font-size: calc(22 * var(--px)); color: var(--dark); font-weight: 700; }
+.p-ai-summary    { font-size: calc(18 * var(--px)); color: rgba(0,0,0,0.55); line-height: 1.5; margin-top: calc(8 * var(--px)); }
+
+.p-ai-actions {
+    display: flex;
+    gap: calc(12 * var(--px));
+    flex-shrink: 0;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.p-ai-main {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: calc(20 * var(--px));
+}
+
+.p-ai-section {}
+.p-ai-section-title {
+    font-size: calc(26 * var(--px));
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: calc(12 * var(--px));
+}
+
+/* AI swatches (used by ai-guide.js) */
+.ai-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(12 * var(--px));
+}
+
+.ai-swatch {
+    background: #ffffff;
+    border-radius: calc(12 * var(--px));
+    padding: calc(8 * var(--px));
+    box-shadow: var(--shadow-card);
+    display: flex;
+    align-items: center;
+    gap: calc(8 * var(--px));
+    cursor: default;
+}
+
+.ai-swatch-color {
+    width: calc(36 * var(--px));
+    height: calc(36 * var(--px));
+    border-radius: calc(8 * var(--px));
+    flex-shrink: 0;
+}
+
+.ai-swatch-meta { display: flex; flex-direction: column; }
+.ai-swatch-name { font-size: calc(18 * var(--px)); font-weight: 600; color: var(--dark); }
+.ai-swatch-hex  { font-size: calc(16 * var(--px)); color: rgba(0,0,0,0.45); }
+
+.ai-palette-small .ai-swatch-color {
+    width: calc(28 * var(--px));
+    height: calc(28 * var(--px));
+}
+.ai-swatch-sm .ai-swatch-name { font-size: calc(16 * var(--px)); }
+
+/* AI recommend list */
+.ai-recommend-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--px));
+}
+
+.ai-recommend-item {
+    background: #ffffff;
+    border-radius: calc(12 * var(--px));
+    padding: calc(14 * var(--px)) calc(18 * var(--px));
+    box-shadow: var(--shadow-card);
+}
+
+.ai-recommend-title {
+    font-size: calc(22 * var(--px));
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: calc(4 * var(--px));
+}
+
+.ai-recommend-desc {
+    font-size: calc(18 * var(--px));
+    color: rgba(0,0,0,0.55);
+    line-height: 1.5;
+}
+
+.ai-recommend-tag {
+    display: inline-block;
+    margin-top: calc(6 * var(--px));
+    font-size: calc(16 * var(--px));
+    font-weight: 600;
+    background: rgba(207,36,45,0.1);
+    color: var(--red);
+    padding: calc(2 * var(--px)) calc(10 * var(--px));
+    border-radius: calc(8 * var(--px));
+}
+
+
+/* ============================================================
+   STEP AI OUTFIT: AI-curated Outfit Selection
+   ============================================================ */
+
+.p-ai-outfit-sidebar {
+    max-height: 58vh;
+}
+
+.p-sidebar-section {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--px));
+    padding-bottom: calc(8 * var(--px));
+    border-bottom: calc(1 * var(--px)) solid rgba(0,0,0,0.08);
+}
+
+.p-analysis-label {
+    font-size: calc(22 * var(--px));
+    font-weight: 700;
+    color: rgba(0,0,0,0.55);
+    text-transform: uppercase;
+    letter-spacing: calc(0.5 * var(--px));
+}
+
+.p-analysis-meta {
+    display: flex;
+    gap: calc(16 * var(--px));
+}
+
+.p-analysis-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(2 * var(--px));
+}
+
+.p-analysis-val {
+    font-size: calc(24 * var(--px));
+    font-weight: 700;
+}
+
+.p-analysis-label-sm {
+    font-size: calc(16 * var(--px));
+    color: rgba(0,0,0,0.4);
+}
+
+.p-analysis-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(6 * var(--px));
+}
+
+/* Season tabs */
+.p-season-tabs {
+    display: flex;
+    gap: calc(6 * var(--px));
+    flex-wrap: wrap;
+}
+
+.ai-season-tab {
+    flex: 0 0 auto;
+    padding: calc(8 * var(--px)) calc(20 * var(--px));
+    border-radius: calc(180 * var(--px));
+    font-size: calc(20 * var(--px));
+    font-weight: 600;
+    color: rgba(0,0,0,0.5);
+    background: transparent;
+    border: calc(1.5 * var(--px)) solid rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.ai-season-tab.active {
+    background: var(--grad);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+/* AI outfit grid */
+.ai-outfit-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(10 * var(--px));
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.ai-outfit-option {
+    aspect-ratio: 3/4;
+    border-radius: calc(12 * var(--px));
+    overflow: hidden;
+    cursor: pointer;
+    border: calc(2 * var(--px)) solid transparent;
+    transition: border-color 0.15s;
+    position: relative;
+}
+.ai-outfit-option img { width: 100%; height: 100%; object-fit: cover; }
+.ai-outfit-option.selected { border-color: var(--red); }
+.ai-outfit-option.recommended::after,
+.ai-outfit-option.ai-recommended::after {
+    content: '✦';
+    position: absolute;
+    top: calc(6 * var(--px));
+    right: calc(6 * var(--px));
+    background: var(--grad);
+    color: #fff;
+    font-size: calc(14 * var(--px));
+    width: calc(22 * var(--px));
+    height: calc(22 * var(--px));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* AI analysis palette swatches (inside ai outfit sidebar) */
+.ai-analysis-swatch {
+    width: calc(28 * var(--px));
+    height: calc(28 * var(--px));
+    border-radius: calc(6 * var(--px));
+    flex-shrink: 0;
+    border: calc(1 * var(--px)) solid rgba(0,0,0,0.08);
+}
+
+
+/* ============================================================
+   STEP 4: Result
+   ============================================================ */
+
+.p-result-frame {
+    /* Same position as camera frame */
+}
+
+.p-result-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Remove dark overlay for result */
+.p-result-frame::after { display: none; }
+
+/* Action buttons below the result frame */
+.p-result-actions {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: calc(1670 * var(--px));
+    display: flex;
+    gap: calc(24 * var(--px));
+    z-index: 10;
+}
+
+.p-result-btn {
+    width: calc(88 * var(--px));
+    height: calc(88 * var(--px));
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    box-shadow: var(--shadow-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+    border: calc(2 * var(--px)) solid rgba(0,0,0,0.08);
+}
+.p-result-btn img {
+    width: calc(40 * var(--px));
+    height: calc(40 * var(--px));
+    object-fit: contain;
+}
+.p-result-btn:hover  { transform: scale(1.08); }
+.p-result-btn:active { transform: scale(0.94); }
+
+.p-result-btn-dl {
+    background: var(--grad);
+    border-color: transparent;
+}
+.p-result-btn-dl img { filter: brightness(10); }
+
+.p-result-msg {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: calc(1790 * var(--px));
+    font-size: calc(28 * var(--px));
+    font-weight: 600;
+    color: rgba(0,0,0,0.5);
+    white-space: nowrap;
+    z-index: 10;
+}
+
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+
+.p-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.p-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+}
+
+.p-modal-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.p-modal-inner img {
+    max-width: 100%;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.modal-close {
+    position: absolute;
+    top: -48px;
+    right: 0;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    font-size: 2rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.modal-close:hover { background: rgba(255,255,255,0.25); transform: rotate(90deg); }
+
+/* QR Modal */
+.qr-modal-content {
+    position: relative;
+    z-index: 1;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.qr-modal-content .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0,0,0,0.1);
+    color: #1e293b;
+    width: 36px;
+    height: 36px;
+    font-size: 1.5rem;
+}
+.qr-modal-content .modal-close:hover { background: rgba(0,0,0,0.2); }
+.qr-title    { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+.qr-subtitle { font-size: 0.9rem; color: #64748b; margin-bottom: 24px; }
+.qr-code-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.qr-code-container canvas { border-radius: 8px; }
+
+
+/* ============================================================
+   UTILITY / SHARED
+   ============================================================ */
+
+.loading-message {
+    text-align: center;
+    padding: calc(40 * var(--px));
+    color: rgba(0,0,0,0.6);
+    font-size: calc(20 * var(--px));
+}
+.error-message {
+    text-align: center;
+    padding: calc(40 * var(--px));
+    color: #f87171;
+    font-size: calc(20 * var(--px));
+}
+
+/* Camera unavailable */
+.camera-unavailable {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: calc(30 * var(--px));
+    color: rgba(255,255,255,0.75);
+    flex-direction: column;
+    gap: calc(16 * var(--px));
+}
+.camera-unavailable .cam-icon { font-size: calc(48 * var(--px)); }
+.camera-unavailable p { font-size: calc(24 * var(--px)); line-height: 1.6; }
+
+/* Process steps (used by script.js animation) */
+.process-step { opacity: 0.3; transition: opacity 0.3s; }
+.process-step.active { opacity: 1; }
+
+
+/* ============================================================
+   AI AVATAR — ElevenLabs (copied from landscape styles.css)
+   ============================================================ */
+
+.ai-avatar-container {
+    display: none !important;
+    position: fixed;
+    bottom: 0;
+    right: calc(-1 * var(--avatar-w, 320px));
+    left: auto;
+    width: var(--avatar-w, 320px);
+    height: 65vh;
+    max-height: 600px;
+    z-index: 250;
+    pointer-events: none;
+    background: transparent;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+        opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+        transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+        left 0s, right 0s;
+}
+
+.ai-avatar-container.side-right { right: -20px; left: auto; }
+.ai-avatar-container.side-left  { left: -20px;  right: auto; }
+.ai-avatar-container.avatar-visible { opacity: 1; transform: translateY(0); }
+
+.ai-avatar-pulse {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    translate: -50% 0;
+    width: 80px;
+    height: 16px;
+    background: radial-gradient(ellipse at center, rgba(91,124,250,0.55) 0%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.ai-avatar-container.avatar-speaking .ai-avatar-pulse {
+    opacity: 1;
+    animation: avatar-pulse 1.2s ease-in-out infinite;
+}
+@keyframes avatar-pulse {
+    0%,100% { transform: scaleX(1);   opacity: 0.6; }
+    50%      { transform: scaleX(1.2); opacity: 1;   }
+}
+
+.el-video-wrap {
+    display: flex;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: transparent;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.el-src-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.el-avatar-canvas {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    height: 80%;
+    width: auto;
+    pointer-events: none;
+    background: transparent;
+}
+
+.el-status-badge {
+    display: none;
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.el-status-badge:not(:empty) { opacity: 1; }
+.el-status-connecting { background: rgba(250,180,30,0.75); color: #111; }
+.el-status-live       { background: rgba(46,195,120,0.75);  color: #fff; }
+.el-status-error      { background: rgba(220,60,60,0.75);   color: #fff; }
+.el-status-mic        { background: rgba(91,124,250,0.85);  color: #fff; }
+
+.el-caption {
+    position: absolute;
+    bottom: 80px;
+    right: calc(100% + 10px);
+    left: auto;
+    width: 220px;
+    padding: 14px 14px 12px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.1);
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    z-index: 12;
+}
+.el-caption.caption-visible { opacity: 1; transform: translateY(0); }
+.el-caption-title  { font-size: 14px; font-weight: 700; color: #1a6bbf; margin-bottom: 6px; }
+.el-caption-body   { font-size: 12px; line-height: 1.55; color: #333; margin: 0 0 12px; }
+.el-caption-footer { display: flex; justify-content: flex-end; }
+.el-caption-ok {
+    background: #1a6bbf;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 6px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.el-caption-ok:hover { background: #155ea8; }
+
+.el-chat-bar { display: none; }
+
+.el-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.6);
+    transition: color 0.2s, background 0.2s;
+    flex-shrink: 0;
+}
+.el-btn svg { width: 16px; height: 16px; }
+.el-btn:hover { color: #fff; background: rgba(255,255,255,0.12); }
+.el-btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+.el-btn.mic-active { color: #6b9bff; background: rgba(91,124,250,0.2); }
+
+.el-mic-float {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.25);
+    background: rgba(15,20,50,0.72);
+    backdrop-filter: blur(8px);
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    overflow: visible;
+}
+.el-mic-float svg { width: 18px; height: 18px; position: relative; z-index: 1; }
+.el-mic-float .mic-icon-off { display: none; }
+.el-mic-float.mic-muted .mic-icon-on  { display: none; }
+.el-mic-float.mic-muted .mic-icon-off { display: block; }
+.el-mic-float.mic-listening {
+    display: flex;
+    color: #fff;
+    border-color: rgba(91,124,250,0.7);
+    background: rgba(91,124,250,0.25);
+}
+.el-mic-float.mic-muted {
+    display: flex;
+    color: rgba(255,255,255,0.45);
+    border-color: rgba(255,255,255,0.2);
+    background: rgba(30,30,60,0.65);
+}
+
+.mic-pulse-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid rgba(91,124,250,0);
+    pointer-events: none;
+    transition: border-color 0.3s;
+}
+.el-mic-float.mic-listening .mic-pulse-ring {
+    border-color: rgba(91,124,250,0.55);
+    animation: mic-ring-pulse 1.8s ease-in-out infinite;
+}
+@keyframes mic-ring-pulse {
+    0%   { transform: scale(1);    opacity: 1; }
+    70%  { transform: scale(1.45); opacity: 0; }
+    100% { transform: scale(1);    opacity: 0; }
+}
+
+
+/* ============================================================
+   AI ANALYSIS label-small (used in ai-guide.js sidebar)
+   ============================================================ */
+.ai-analysis-label-small {
+    font-size: calc(16 * var(--px));
+    color: rgba(0,0,0,0.4);
+    display: block;
+    margin-top: calc(2 * var(--px));
+}

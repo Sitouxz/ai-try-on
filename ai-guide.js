@@ -147,7 +147,13 @@
             });
             if (!res.ok) {
                 const errText = await res.text();
-                throw new Error(`Analysis failed (${res.status}): ${errText}`);
+                let friendlyMsg = `Analysis failed (${res.status}). Please try again.`;
+                try {
+                    const errJson = JSON.parse(errText);
+                    const msg = errJson?.error?.message;
+                    if (msg) friendlyMsg = msg;
+                } catch (_) {}
+                throw new Error(friendlyMsg);
             }
             const json = await res.json();
             const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -271,7 +277,7 @@
         if (!stepAi) return;
         stepAi.style.display = 'block';
         stepAi.innerHTML = `
-            <h2 class="camera-page-title">Color Analysis</h2>
+            <h2 class="camera-page-title p-page-title">Color Analysis</h2>
             <div class="ai-error-card">
                 <div class="ai-error-icon">!</div>
                 <p class="ai-error-msg">${escapeHtml(message)}</p>

@@ -301,8 +301,8 @@ class PhotoboothApp {
     }
 
     showStep(num) {
-        const aiResults = document.getElementById('stepAi');
-        if (aiResults) aiResults.style.display = 'none';
+        document.getElementById('stepAi')?.style.setProperty('display', 'none');
+        document.getElementById('stepAiOutfit')?.style.setProperty('display', 'none');
         [this.step1, this.step2, this.step3, this.step4].forEach(el => {
             if (el) el.style.display = 'none';
         });
@@ -378,8 +378,7 @@ class PhotoboothApp {
             this.uploadArea.style.display = 'none';
             this.sidebarOutfitGrid.innerHTML = '<div class="loading-message">Loading outfits...</div>';
 
-            // Map gender to correct folder name ('woman' -> 'woman', 'men' -> 'man')
-            const folderName = this.currentGender === 'men' ? 'man' : this.currentGender;
+            const folderName = this.currentGender;
             const folderPath = `assets/${folderName}/${this.currentCategory}/`;
             const outfits = await this.loadOutfitsFromFolder(folderPath);
             
@@ -419,7 +418,7 @@ class PhotoboothApp {
         }
 
         // Fallback: probe via Image load — works from file:// (no CORS restriction on img src)
-        const candidates = Array.from({ length: 20 }, (_, i) => `image ${i + 1}.png`);
+        const candidates = Array.from({ length: 20 }, (_, i) => `${i + 1}.png`);
         const results = await Promise.all(candidates.map(filename => new Promise(resolve => {
             const img = new Image();
             const url = `/assets/${folder}/${encodeURIComponent(filename)}`;
@@ -654,6 +653,7 @@ class PhotoboothApp {
         this.currentResultUrl = imageUrl;
         this.resultImage.src = imageUrl;
         this.showStep(4);
+        window.scrollTo(0, 0);
     }
 
     showError(message) {
@@ -724,8 +724,23 @@ class PhotoboothApp {
     }
 }
 
+function requestFullscreen() {
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+    if (req) req.call(el).catch(() => {});
+}
+
 let photoboothApp;
 document.addEventListener('DOMContentLoaded', () => {
     photoboothApp = new PhotoboothApp();
     window.photoboothApp = photoboothApp;
+
+    // Try immediately (works if page was opened by a user gesture, e.g. kiosk/autoplay)
+    requestFullscreen();
+
+    // Fallback: grab fullscreen on the very first tap/click if the above was blocked
+    document.addEventListener('click', function onFirstClick() {
+        requestFullscreen();
+        document.removeEventListener('click', onFirstClick);
+    }, { once: true });
 });

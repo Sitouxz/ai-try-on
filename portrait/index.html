@@ -12,6 +12,53 @@
 </head>
 <body class="portrait-mode">
 
+<!-- Language Switcher -->
+<div class="p-lang-switcher">
+    <button class="lang-btn active" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="id">ID</button>
+</div>
+
+<!-- ElevenLabs Conversational AI Avatar -->
+<div id="aiAvatarContainer" class="ai-avatar-container" aria-hidden="true">
+    <div class="el-video-wrap">
+        <video id="elAvatarIdle" src="../assets/idle.mp4" loop muted playsinline autoplay
+               class="el-src-video"></video>
+        <video id="elAvatarTalk" src="../assets/talk.mp4" loop muted playsinline
+               class="el-src-video"></video>
+        <canvas id="elCanvasIdle" class="el-avatar-canvas"></canvas>
+        <canvas id="elCanvasTalk" class="el-avatar-canvas" style="display:none"></canvas>
+        <div class="el-status-badge" id="elStatusBadge"></div>
+    </div>
+
+    <!-- Caption card -->
+    <div id="elCaption" class="el-caption">
+        <div class="el-caption-title" data-i18n="aiGuide.title">AI Guide</div>
+        <p id="elCaptionBody" class="el-caption-body"></p>
+        <div class="el-caption-footer">
+            <button id="elCaptionOk" class="el-caption-ok">OK</button>
+        </div>
+    </div>
+
+    <!-- Voice control bar -->
+    <div class="el-chat-bar">
+        <button class="el-btn el-mic-btn" id="elMicBtn" title="Toggle mic" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <button class="el-btn el-interrupt-btn" id="elInterruptBtn" title="Stop speaking" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        </button>
+    </div>
+
+    <!-- Floating mic indicator -->
+    <button id="elMicFloat" class="el-mic-float" title="Mic active — tap to mute" aria-label="Microphone status" disabled>
+        <svg class="mic-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <svg class="mic-icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <span class="mic-pulse-ring"></span>
+    </button>
+
+    <div class="ai-avatar-pulse"></div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════
      LANDING SCREEN — Figma Frame 281
      ═══════════════════════════════════════════════════ -->
@@ -23,20 +70,20 @@
     <!-- Model photo -->
     <img src="assets/figma/landing-model.png" class="p-landing-model" alt="Model">
     <!-- Main headline -->
-    <h1 class="p-landing-title">Find Your <span class="p-grad-text">Perfect</span> Look</h1>
+    <h1 class="p-landing-title" id="landingTitle">Find Your <span class="p-grad-text">Perfect</span> Look</h1>
     <!-- Bottom action section -->
     <div class="p-landing-bottom">
         <div class="p-subtitle-bar">
-            <span class="p-subtitle-text">Select your preferred way to get started</span>
+            <span class="p-subtitle-text" data-i18n="landing.subtitle">Select your preferred way to get started</span>
         </div>
         <div class="p-cards">
             <button id="manualTryOnBtn" class="p-card">
                 <img src="assets/figma/icon-manual.svg" class="p-card-icon" alt="">
-                <span class="p-card-label p-grad-text">Manual Try-On</span>
+                <span class="p-card-label p-grad-text" data-i18n="landing.manual">Manual Try-On</span>
             </button>
             <button id="aiGuideBtn" class="p-card">
                 <img src="assets/figma/icon-ai.svg" class="p-card-icon" alt="">
-                <span class="p-card-label p-grad-text">Let AI Guide You</span>
+                <span class="p-card-label p-grad-text" data-i18n="landing.aiGuide">Let AI Guide You</span>
             </button>
         </div>
     </div>
@@ -58,7 +105,7 @@
 
         <!-- Screen title (top) -->
         <div class="p-screen-header">
-            <h2 class="p-screen-title" id="cameraModeTitle">Manual Try-On</h2>
+            <h2 class="p-screen-title" id="cameraModeTitle" data-i18n="camera.title">Manual Try-On</h2>
         </div>
 
         <!-- Step progress indicator (kept for JS) -->
@@ -71,13 +118,18 @@
         <!-- Camera live feed frame — Figma camera frame -->
         <div class="p-photo-frame" id="cameraWrapper">
             <video id="cameraVideo" autoplay playsinline muted></video>
-            <p class="p-camera-hint" id="cameraHint">Stand within the frame...</p>
+            <p class="p-camera-hint" id="cameraHint" data-i18n="camera.hint">Stand within the frame...</p>
             <!-- Countdown overlay (inside camera frame) -->
             <div class="p-countdown" id="countdownOverlay" style="display:none">
                 <div class="p-countdown-circle">
                     <div class="p-countdown-num" id="countdownNumber">3</div>
                 </div>
-                <p class="p-countdown-label">Counting down...</p>
+                <p class="p-countdown-label" data-i18n="camera.countdown">Counting down...</p>
+            </div>
+            <!-- Processing spinner overlay -->
+            <div class="p-capture-processing" id="captureProcessing" style="display:none">
+                <div class="p-capture-spinner"></div>
+                <p class="p-capture-processing-text" data-i18n="processing.text">Processing...</p>
             </div>
         </div>
 
@@ -86,7 +138,7 @@
             <img id="capturedImg" alt="Captured photo">
             <div class="p-loading-overlay" id="loadingOverlay" style="display:none">
                 <div class="p-loading-spinner"></div>
-                <p class="loading-text">Fitting your look...</p>
+                <p class="loading-text" data-i18n="loading.fitting">Fitting your look...</p>
             </div>
         </div>
 
@@ -101,45 +153,53 @@
             </button>
             <!-- Retake button -->
             <button id="retakeBtn" class="p-retake-btn" style="display:none">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1em;height:1em;flex-shrink:0">
                     <path d="M1 4v6h6M23 20v-6h-6"/>
                     <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
                 </svg>
-                Retake
+                <span data-i18n="btn.retake">Retake</span>
             </button>
         </div>
 
+        <!-- Outfit sidebar toggle (floating, always visible when sidebar exists) -->
+        <button class="p-sidebar-toggle" id="sidebarToggle" aria-label="Toggle outfit panel" style="display:none">
+            <span class="p-sidebar-toggle-icon">▼</span>
+            <span class="p-sidebar-toggle-label" data-i18n="sidebar.outfits">Outfits</span>
+        </button>
+
         <!-- Outfit sidebar (manual mode — bottom sheet) -->
         <div class="p-outfit-sidebar" id="outfitSidebar" style="display:none">
+            <div class="p-sidebar-collapsible" id="sidebarCollapsible">
             <div class="p-sidebar-top">
                 <!-- Gender tabs -->
                 <div class="p-sidebar-tabs">
-                    <button class="gender-tab active" data-gender="woman">WOMAN</button>
-                    <button class="gender-tab" data-gender="men">MEN</button>
-                    <button class="gender-tab" data-gender="upload">UPLOAD</button>
+                    <button class="gender-tab active" data-gender="woman" data-i18n="tabs.woman">WOMAN</button>
+                    <button class="gender-tab" data-gender="men" data-i18n="tabs.men">MEN</button>
+                    <button class="gender-tab" data-gender="upload" data-i18n="tabs.upload">UPLOAD</button>
                 </div>
                 <!-- Category filters -->
                 <div class="p-category-row" id="categoryFilters">
-                    <button class="category-filter active" data-category="top">TOP</button>
-                    <button class="category-filter" data-category="bottom">BOTTOM</button>
+                    <button class="category-filter active" data-category="top" data-i18n="tabs.top">TOP</button>
+                    <button class="category-filter" data-category="bottom" data-i18n="tabs.bottom">BOTTOM</button>
                 </div>
             </div>
             <!-- Upload area -->
             <div class="p-upload-area" id="uploadArea" style="display:none">
                 <div class="p-dropzone" id="uploadDropzone">
                     <div class="p-upload-icon">📁</div>
-                    <p class="upload-text">Drag & drop your outfit image here</p>
-                    <p class="p-upload-or">or</p>
-                    <button class="p-btn-upload" id="uploadButton">Choose File</button>
+                    <p class="upload-text" data-i18n="upload.dragDrop">Drag & drop your outfit image here</p>
+                    <p class="p-upload-or" data-i18n="upload.or">or</p>
+                    <button class="p-btn-upload" id="uploadButton" data-i18n="upload.chooseFile">Choose File</button>
                     <input type="file" id="uploadInput" accept="image/*" style="display:none">
                 </div>
             </div>
             <!-- Outfit grid -->
             <div class="sidebar-outfit-grid" id="sidebarOutfitGrid">
-                <div class="loading-message">Loading outfits...</div>
+                <div class="loading-message" data-i18n="loading.outfits">Loading outfits...</div>
             </div>
             <!-- Try on button -->
-            <button id="tryOnBtn" class="p-btn-primary p-try-btn" disabled>TRY ON</button>
+            <button id="tryOnBtn" class="p-btn-primary p-try-btn" disabled data-i18n="btn.tryOn">TRY ON</button>
+            </div><!-- /p-sidebar-collapsible -->
         </div>
     </div>
 
@@ -148,21 +208,21 @@
          ───────────────────────────────────────────── -->
     <div id="step2" class="p-screen p-step2" style="display:none">
         <div class="p-step2-header">
-            <h2 class="p-step2-title">Choose Your Outfit</h2>
-            <p class="p-step2-sub">Select an outfit for your AI-generated photo</p>
+            <h2 class="p-step2-title" data-i18n="outfit.title">Choose Your Outfit</h2>
+            <p class="p-step2-sub" data-i18n="outfit.subtitle">Select an outfit for your AI-generated photo</p>
         </div>
         <div class="p-step2-body">
             <div class="p-person-thumb">
                 <img id="personThumb" alt="Your photo">
-                <div class="p-thumb-label">Your Photo</div>
+                <div class="p-thumb-label" data-i18n="outfit.yourPhoto">Your Photo</div>
             </div>
             <div class="outfit-grid" id="outfitGrid">
-                <div class="loading-message">Loading outfits...</div>
+                <div class="loading-message" data-i18n="loading.outfits">Loading outfits...</div>
             </div>
         </div>
         <div class="p-step2-controls">
-            <button id="backToCameraBtn" class="p-btn-ghost">← Retake Photo</button>
-            <button id="generateBtn" class="p-btn-primary" disabled>Generate My Photo →</button>
+            <button id="backToCameraBtn" class="p-btn-ghost" data-i18n="btn.retakePhoto">← Retake Photo</button>
+            <button id="generateBtn" class="p-btn-primary" disabled data-i18n="btn.generate">Generate My Photo →</button>
         </div>
     </div>
 
@@ -178,11 +238,8 @@
         <div class="p-photo-frame p-processing-frame">
             <img id="processingImg" class="p-processing-photo" alt="Your photo">
             <div class="p-processing-overlay">
-                <div class="p-spinner-wrap">
-                    <img src="assets/figma/spinner-arc.png" class="p-spin-arc" alt="">
-                    <img src="assets/figma/spinner-dot.svg" class="p-spin-dot" alt="">
-                </div>
-                <p class="p-processing-text" id="processingStatus">Processing photo...</p>
+                <div class="p-spinner-wrap"></div>
+                <p class="p-processing-text" id="processingStatus" data-i18n="loading.fitting">Processing photo...</p>
             </div>
         </div>
     </div>
@@ -191,7 +248,7 @@
          STEP AI: Color Analysis Results
          ───────────────────────────────────────────── -->
     <div id="stepAi" class="p-screen p-ai-results" style="display:none">
-        <h2 class="p-page-title">Your Color Analysis</h2>
+        <h2 class="p-page-title" data-i18n="aiResults.title">Your Color Analysis</h2>
         <div class="p-ai-layout">
             <aside class="p-ai-side">
                 <div class="p-ai-photo">
@@ -200,41 +257,41 @@
                 <div class="p-ai-meta-card">
                     <div class="p-ai-meta">
                         <div class="p-ai-meta-row">
-                            <span class="p-ai-meta-label">Season</span>
+                            <span class="p-ai-meta-label" data-i18n="meta.season">Season</span>
                             <span id="aiSeason" class="p-ai-meta-val">—</span>
                         </div>
                         <div class="p-ai-meta-row">
-                            <span class="p-ai-meta-label">Undertone</span>
+                            <span class="p-ai-meta-label" data-i18n="meta.undertone">Undertone</span>
                             <span id="aiUndertone" class="p-ai-meta-val">—</span>
                         </div>
                         <div class="p-ai-meta-row">
-                            <span class="p-ai-meta-label">Contrast</span>
+                            <span class="p-ai-meta-label" data-i18n="meta.contrast">Contrast</span>
                             <span id="aiContrast" class="p-ai-meta-val">—</span>
                         </div>
                     </div>
                     <p id="aiSummary" class="p-ai-summary"></p>
                 </div>
                 <div class="p-ai-actions">
-                    <button id="aiHomeBtn" class="p-btn-ghost">← Home</button>
-                    <button id="aiRetakeBtn" class="p-btn-ghost">Retake</button>
-                    <button id="aiTryOnBtn" class="p-btn-primary">Try on an outfit →</button>
+                    <button id="aiHomeBtn" class="p-btn-ghost" data-i18n="btn.home">← Home</button>
+                    <button id="aiRetakeBtn" class="p-btn-ghost" data-i18n="btn.retake">Retake</button>
+                    <button id="aiTryOnBtn" class="p-btn-primary" data-i18n="btn.tryOnOutfit">Try on an outfit →</button>
                 </div>
             </aside>
             <section class="p-ai-main">
                 <div class="p-ai-section">
-                    <h3 class="p-ai-section-title">Your Color Palette</h3>
+                    <h3 class="p-ai-section-title" data-i18n="aiResults.palette">Your Color Palette</h3>
                     <div id="aiPalette" class="ai-palette"></div>
                 </div>
                 <div class="p-ai-section" id="aiAvoidSection" style="display:none">
-                    <h3 class="p-ai-section-title">Colors to Avoid</h3>
+                    <h3 class="p-ai-section-title" data-i18n="aiResults.avoid">Colors to Avoid</h3>
                     <div id="aiAvoidColors" class="ai-palette ai-palette-small"></div>
                 </div>
                 <div class="p-ai-section">
-                    <h3 class="p-ai-section-title">Outfit Recommendations</h3>
+                    <h3 class="p-ai-section-title" data-i18n="aiResults.outfits">Outfit Recommendations</h3>
                     <ul id="aiOutfits" class="ai-recommend-list"></ul>
                 </div>
                 <div class="p-ai-section">
-                    <h3 class="p-ai-section-title">Accessory Recommendations</h3>
+                    <h3 class="p-ai-section-title" data-i18n="aiResults.accessories">Accessory Recommendations</h3>
                     <ul id="aiAccessories" class="ai-recommend-list"></ul>
                 </div>
             </section>
@@ -257,27 +314,27 @@
         <!-- AI outfit sidebar (bottom sheet) -->
         <div class="p-outfit-sidebar p-ai-outfit-sidebar" id="aiOutfitSidebar">
             <div class="p-sidebar-section">
-                <p class="p-analysis-label">Your Color Analysis</p>
+                <p class="p-analysis-label" data-i18n="aiOutfit.yourColorAnalysis">Your Color Analysis</p>
                 <div class="p-analysis-meta" id="aiAnalysisMeta">
                     <div class="p-analysis-item">
                         <span class="p-analysis-val p-grad-text" id="aiOutfitSeason">—</span>
-                        <span class="p-analysis-label-sm">Season</span>
+                        <span class="p-analysis-label-sm" data-i18n="meta.season">Season</span>
                     </div>
                     <div class="p-analysis-item">
                         <span class="p-analysis-val p-grad-text" id="aiOutfitUndertone">—</span>
-                        <span class="p-analysis-label-sm">Undertone</span>
+                        <span class="p-analysis-label-sm" data-i18n="meta.undertone">Undertone</span>
                     </div>
                     <div class="p-analysis-item">
                         <span class="p-analysis-val p-grad-text" id="aiOutfitContrast">—</span>
-                        <span class="p-analysis-label-sm">Contrast</span>
+                        <span class="p-analysis-label-sm" data-i18n="meta.contrast">Contrast</span>
                     </div>
                 </div>
                 <div class="p-analysis-palette" id="aiAnalysisPalette"></div>
             </div>
             <div class="p-sidebar-top">
                 <div class="p-sidebar-tabs" id="aiGenderTabs">
-                    <button class="ai-gender-tab active" data-gender="woman">WOMAN</button>
-                    <button class="ai-gender-tab" data-gender="men">MEN</button>
+                    <button class="ai-gender-tab active" data-gender="woman" data-i18n="tabs.woman">WOMAN</button>
+                    <button class="ai-gender-tab" data-gender="men" data-i18n="tabs.men">MEN</button>
                 </div>
                 <div class="p-season-tabs" id="aiSeasonTabs">
                     <button class="ai-season-tab active" data-season="spring">Spring</button>
@@ -286,14 +343,14 @@
                     <button class="ai-season-tab" data-season="winter">Winter</button>
                 </div>
                 <div class="p-category-row">
-                    <button class="ai-category-filter active" data-category="top">TOP</button>
-                    <button class="ai-category-filter" data-category="bottom">BOTTOM</button>
+                    <button class="ai-category-filter active" data-category="top" data-i18n="tabs.top">TOP</button>
+                    <button class="ai-category-filter" data-category="bottom" data-i18n="tabs.bottom">BOTTOM</button>
                 </div>
             </div>
             <div class="ai-outfit-grid" id="aiOutfitGrid">
-                <div class="loading-message">Loading recommended outfits...</div>
+                <div class="loading-message" data-i18n="loading.aiOutfits">Loading recommended outfits...</div>
             </div>
-            <button id="aiTryOnSelectedBtn" class="p-btn-primary p-try-btn" disabled>Try On</button>
+            <button id="aiTryOnSelectedBtn" class="p-btn-primary p-try-btn" disabled data-i18n="aiOutfit.tryOn">Try On</button>
         </div>
     </div>
 
@@ -312,17 +369,17 @@
 
         <!-- Result action buttons (below frame) -->
         <div class="p-result-actions">
-            <button id="homeBtn" class="p-result-btn" title="Back to Home">
+            <button id="homeBtn" class="p-result-btn" data-i18n-title="tooltip.home" title="Back to Home">
                 <img src="../assets/home.png" alt="Home">
             </button>
-            <button id="rechooseBtn" class="p-result-btn" title="Re-choose Outfit">
+            <button id="rechooseBtn" class="p-result-btn" data-i18n-title="tooltip.rechoose" title="Re-choose Outfit">
                 <img src="../assets/replace.png" alt="Replace">
             </button>
-            <button id="downloadBtn" class="p-result-btn p-result-btn-dl" title="Download Photo">
+            <button id="downloadBtn" class="p-result-btn p-result-btn-dl" data-i18n-title="tooltip.download" title="Download Photo">
                 <img src="../assets/download.png" alt="Download">
             </button>
         </div>
-        <p class="p-result-msg">Your photo is ready!</p>
+        <p class="p-result-msg" data-i18n="result.ready">Your photo is ready!</p>
     </div>
 
 </div><!-- /appContainer -->
@@ -342,10 +399,10 @@
     <div class="p-modal-backdrop" id="qrBackdrop"></div>
     <div class="qr-modal-content">
         <button class="modal-close" id="closeQrModal">&times;</button>
-        <h3 class="qr-title">Scan to Download</h3>
-        <p class="qr-subtitle">Scan this QR code with your mobile device to download your photo</p>
+        <h3 class="qr-title" data-i18n="qr.title">Scan to Download</h3>
+        <p class="qr-subtitle" data-i18n="qr.subtitle">Scan this QR code with your mobile device to download your photo</p>
         <div id="qrCodeContainer" class="qr-code-container"></div>
-        <button id="directDownloadBtn" class="p-btn-primary" style="margin-top:20px;">Download Directly</button>
+        <button id="directDownloadBtn" class="p-btn-primary" style="margin-top:20px;" data-i18n="qr.downloadBtn">Download Directly</button>
     </div>
 </div>
 
@@ -354,8 +411,39 @@
      ═══════════════════════════════════════════════════ -->
 <script src="../config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="../i18n.js"></script>
 <script src="../script.js"></script>
 <script src="../ai-guide.js"></script>
 <script src="../elevenlabs-avatar.js"></script>
+<script>
+(function() {
+    var toggle = document.getElementById('sidebarToggle');
+    var sidebar = document.getElementById('outfitSidebar');
+    var icon = toggle ? toggle.querySelector('.p-sidebar-toggle-icon') : null;
+
+    var sidebarOpen = true;
+
+    function updateToggle() {
+        icon.textContent = sidebarOpen ? '▼' : '▲';
+        toggle.classList.toggle('sidebar-collapsed', !sidebarOpen);
+    }
+
+    if (toggle && sidebar) {
+        toggle.addEventListener('click', function() {
+            sidebarOpen = !sidebarOpen;
+            sidebar.style.display = sidebarOpen ? 'flex' : 'none';
+            updateToggle();
+        });
+    }
+
+    window.showOutfitToggle = function(visible) {
+        toggle.style.display = visible ? 'flex' : 'none';
+        if (visible) {
+            sidebarOpen = true;
+            updateToggle();
+        }
+    };
+})();
+</script>
 </body>
 </html>

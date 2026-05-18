@@ -8,6 +8,12 @@
 </head>
 <body>
 
+    <!-- Language Switcher -->
+    <div class="language-switcher" id="languageSwitcher">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="id">ID</button>
+    </div>
+
     <!-- Landing Screen -->
     <div id="stepLanding" class="landing-screen">
         <video class="landing-video" autoplay muted loop playsinline>
@@ -16,15 +22,15 @@
         <div class="landing-overlay"></div>
         <div class="landing-content">
 
-            <p class="landing-subtitle">Select your preferred way to get started</p>
+            <p class="landing-subtitle" data-i18n="landing.subtitle">Select your preferred way to get started</p>
             <div class="landing-cards">
                 <div class="landing-card" id="manualTryOnBtn">
                     <img src="assets/manual.png" alt="Manual Try-On icon">
-                    <span>Manual Try-On</span>
+                    <span data-i18n="landing.manual">Manual Try-On</span>
                 </div>
                 <div class="landing-card" id="aiGuideBtn">
                     <img src="assets/ai-guide.png" alt="Let AI Guide You icon">
-                    <span>Let AI Guide You</span>
+                    <span data-i18n="landing.aiGuide">Let AI Guide You</span>
                 </div>
             </div>
         </div>
@@ -79,42 +85,42 @@
             <main>
                 <!-- Step 1: Camera Capture -->
                 <div id="step1" class="camera-page">
-                    <h2 class="camera-page-title" id="cameraModeTitle">Manual Try-On</h2>
+                    <h2 class="camera-page-title" id="cameraModeTitle" data-i18n="camera.title">Manual Try-On</h2>
                     
                     <!-- Left Sidebar (hidden initially, shown after capture) -->
                     <div class="outfit-sidebar" id="outfitSidebar" style="display:none">
                         <!-- Gender Tabs -->
                         <div class="gender-tabs">
-                            <button class="gender-tab active" data-gender="woman">WOMAN</button>
-                            <button class="gender-tab" data-gender="men">MEN</button>
-                            <button class="gender-tab" data-gender="upload">UPLOAD</button>
+                            <button class="gender-tab active" data-gender="woman" data-i18n="tabs.woman">WOMAN</button>
+                            <button class="gender-tab" data-gender="men" data-i18n="tabs.men">MEN</button>
+                            <button class="gender-tab" data-gender="upload" data-i18n="tabs.upload">UPLOAD</button>
                         </div>
                         
                         <!-- Category Filters (hidden for UPLOAD) -->
                         <div class="category-filters" id="categoryFilters">
-                            <button class="category-filter active" data-category="top">TOP</button>
-                            <button class="category-filter" data-category="bottom">BOTTOM</button>
+                            <button class="category-filter active" data-category="top" data-i18n="tabs.top">TOP</button>
+                            <button class="category-filter" data-category="bottom" data-i18n="tabs.bottom">BOTTOM</button>
                         </div>
                         
                         <!-- Upload Area (shown only for UPLOAD tab) -->
                         <div class="upload-area" id="uploadArea" style="display:none">
                             <div class="upload-dropzone" id="uploadDropzone">
                                 <div class="upload-icon">📁</div>
-                                <p class="upload-text">Drag & drop your outfit image here</p>
-                                <p class="upload-or">or</p>
-                                <button class="btn-upload" id="uploadButton">Choose File</button>
+                                <p class="upload-text" data-i18n="upload.dragDrop">Drag & drop your outfit image here</p>
+                                <p class="upload-or" data-i18n="upload.or">or</p>
+                                <button class="btn-upload" id="uploadButton" data-i18n="upload.chooseFile">Choose File</button>
                                 <input type="file" id="uploadInput" accept="image/*" style="display:none">
                             </div>
                         </div>
                         
                         <!-- Outfit Grid -->
                         <div class="sidebar-outfit-grid" id="sidebarOutfitGrid">
-                            <div class="loading-message">Loading outfits...</div>
+                            <div class="loading-message" data-i18n="loading.outfits">Loading outfits...</div>
                         </div>
                         
                         <!-- Try On Button -->
                         <button id="tryOnBtn" class="btn btn-primary try-on-btn" disabled>
-                            <span>🎨</span> TRY ON
+                            <span>🎨</span> <span data-i18n="btn.tryOn">TRY ON</span>
                         </button>
                     </div>
                     
@@ -122,19 +128,19 @@
                     <div class="camera-stage">
                         <div class="camera-card" id="cameraWrapper">
                             <video id="cameraVideo" autoplay playsinline muted></video>
-                            <div class="camera-hint" id="cameraHint">Stand within the frame...</div>
+                            <div class="camera-hint" id="cameraHint" data-i18n="camera.hint">Stand within the frame...</div>
                             <div class="countdown-overlay" id="countdownOverlay" style="display:none">
                                 <div class="countdown-circle">
                                     <div class="countdown-number" id="countdownNumber">3</div>
                                 </div>
-                                <div class="countdown-text">Counting down...</div>
+                                <div class="countdown-text" data-i18n="camera.countdown">Counting down...</div>
                             </div>
                         </div>
                         <div class="captured-card" id="capturedPreview" style="display:none">
                             <img id="capturedImg" alt="Captured photo">
                             <div class="loading-overlay" id="loadingOverlay" style="display:none">
                                 <div class="loading-spinner"></div>
-                                <p class="loading-text">Fitting your look...</p>
+                                <p class="loading-text" data-i18n="loading.fitting">Fitting your look...</p>
                             </div>
                         </div>
                         <button id="captureBtn" class="btn-capture-circle">
@@ -149,27 +155,27 @@
                 <!-- Step 2: Outfit Selection -->
                 <div id="step2" class="step-container" style="display:none">
                     <div class="step-header">
-                        <h2>Choose Your Outfit</h2>
-                        <p>Select an outfit for your AI-generated photo</p>
+                        <h2 data-i18n="outfit.title">Choose Your Outfit</h2>
+                        <p data-i18n="outfit.subtitle">Select an outfit for your AI-generated photo</p>
                     </div>
                     <div class="outfit-section">
                         <div class="person-thumbnail">
                             <img id="personThumb" alt="Your photo">
-                            <div class="thumb-label">Your Photo</div>
+                            <div class="thumb-label" data-i18n="outfit.yourPhoto">Your Photo</div>
                         </div>
                         <div class="outfit-grid" id="outfitGrid">
-                            <div class="loading-message">Loading outfits...</div>
+                            <div class="loading-message" data-i18n="loading.outfits">Loading outfits...</div>
                         </div>
                     </div>
                     <div class="outfit-controls">
-                        <button id="backToCameraBtn" class="btn btn-ghost">&larr; Retake Photo</button>
-                        <button id="generateBtn" class="btn btn-primary" disabled>Generate My Photo &rarr;</button>
+                        <button id="backToCameraBtn" class="btn btn-ghost" data-i18n="btn.retakePhoto">&larr; Retake Photo</button>
+                        <button id="generateBtn" class="btn btn-primary" disabled data-i18n="btn.generate">Generate My Photo &rarr;</button>
                     </div>
                 </div>
 
                 <!-- Step 3: Processing -->
                 <div id="step3" class="camera-page" style="display:none">
-                    <h2 class="camera-page-title">Manual Try-On</h2>
+                    <h2 class="camera-page-title" data-i18n="processing.title">Manual Try-On</h2>
                     
                     <div class="processing-photo-container">
                         <img id="processingImg" class="processing-photo" alt="Your photo">
@@ -179,14 +185,14 @@
                                 <div class="orb-ring orb-ring-2"></div>
                                 <div class="orb-core">AI</div>
                             </div>
-                            <p class="processing-text">Fitting your look...</p>
+                            <p class="processing-text" data-i18n="processing.fitting">Fitting your look...</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Step AI: Color Analysis Results -->
                 <div id="stepAi" class="camera-page ai-results-page" style="display:none">
-                    <h2 class="camera-page-title">Your Color Analysis</h2>
+                    <h2 class="camera-page-title" data-i18n="aiResults.title">Your Color Analysis</h2>
 
                     <div class="ai-results-layout">
                         <!-- Left: user photo + summary -->
@@ -196,38 +202,38 @@
                             </div>
                             <div class="ai-summary-card">
                                 <div class="ai-meta">
-                                    <div><span class="ai-meta-label">Season</span><span id="aiSeason" class="ai-meta-value">—</span></div>
-                                    <div><span class="ai-meta-label">Undertone</span><span id="aiUndertone" class="ai-meta-value">—</span></div>
-                                    <div><span class="ai-meta-label">Contrast</span><span id="aiContrast" class="ai-meta-value">—</span></div>
+                                    <div><span class="ai-meta-label" data-i18n="meta.season">Season</span><span id="aiSeason" class="ai-meta-value">—</span></div>
+                                    <div><span class="ai-meta-label" data-i18n="meta.undertone">Undertone</span><span id="aiUndertone" class="ai-meta-value">—</span></div>
+                                    <div><span class="ai-meta-label" data-i18n="meta.contrast">Contrast</span><span id="aiContrast" class="ai-meta-value">—</span></div>
                                 </div>
                                 <p id="aiSummary" class="ai-summary-text"></p>
                             </div>
                             <div class="ai-results-actions">
-                                <button id="aiHomeBtn" class="btn btn-ghost">&larr; Home</button>
-                                <button id="aiRetakeBtn" class="btn btn-ghost">Retake</button>
-                                <button id="aiTryOnBtn" class="btn btn-primary">Try on an outfit &rarr;</button>
+                                <button id="aiHomeBtn" class="btn btn-ghost" data-i18n="btn.home">&larr; Home</button>
+                                <button id="aiRetakeBtn" class="btn btn-ghost" data-i18n="btn.retake">Retake</button>
+                                <button id="aiTryOnBtn" class="btn btn-primary" data-i18n="btn.tryOnOutfit">Try on an outfit &rarr;</button>
                             </div>
                         </aside>
 
                         <!-- Right: recommendations -->
                         <section class="ai-results-main">
                             <div class="ai-section">
-                                <h3 class="ai-section-title">Your Color Palette</h3>
+                                <h3 class="ai-section-title" data-i18n="aiResults.palette">Your Color Palette</h3>
                                 <div id="aiPalette" class="ai-palette"></div>
                             </div>
 
                             <div class="ai-section ai-section-avoid" id="aiAvoidSection" style="display:none">
-                                <h3 class="ai-section-title">Colors to Avoid</h3>
+                                <h3 class="ai-section-title" data-i18n="aiResults.avoid">Colors to Avoid</h3>
                                 <div id="aiAvoidColors" class="ai-palette ai-palette-small"></div>
                             </div>
 
                             <div class="ai-section">
-                                <h3 class="ai-section-title">Outfit Recommendations</h3>
+                                <h3 class="ai-section-title" data-i18n="aiResults.outfits">Outfit Recommendations</h3>
                                 <ul id="aiOutfits" class="ai-recommend-list"></ul>
                             </div>
 
                             <div class="ai-section">
-                                <h3 class="ai-section-title">Accessory Recommendations</h3>
+                                <h3 class="ai-section-title" data-i18n="aiResults.accessories">Accessory Recommendations</h3>
                                 <ul id="aiAccessories" class="ai-recommend-list"></ul>
                             </div>
                         </section>
@@ -236,25 +242,25 @@
 
                 <!-- Step AI Outfit: AI-Based Outfit Selection -->
                 <div id="stepAiOutfit" class="camera-page" style="display:none">
-                    <h2 class="camera-page-title">AI Guide</h2>
+                    <h2 class="camera-page-title" data-i18n="aiGuide.title">AI Guide</h2>
                     
                     <!-- AI Outfit Sidebar -->
                     <div class="ai-outfit-sidebar" id="aiOutfitSidebar">
                         <!-- Color Analysis Summary -->
                         <div class="ai-color-analysis-section">
-                            <p class="ai-analysis-label">Your Color Analysis</p>
+                            <p class="ai-analysis-label" data-i18n="aiResults.analysisTitle">Your Color Analysis</p>
                             <div class="ai-analysis-meta" id="aiAnalysisMeta">
                                 <div class="ai-analysis-item">
                                     <span class="ai-analysis-value" id="aiOutfitSeason">—</span>
-                                    <span class="ai-analysis-label-small">Season</span>
+                                    <span class="ai-analysis-label-small" data-i18n="meta.season">Season</span>
                                 </div>
                                 <div class="ai-analysis-item">
                                     <span class="ai-analysis-value" id="aiOutfitUndertone">—</span>
-                                    <span class="ai-analysis-label-small">Undertone</span>
+                                    <span class="ai-analysis-label-small" data-i18n="meta.undertone">Undertone</span>
                                 </div>
                                 <div class="ai-analysis-item">
                                     <span class="ai-analysis-value" id="aiOutfitContrast">—</span>
-                                    <span class="ai-analysis-label-small">Contrast</span>
+                                    <span class="ai-analysis-label-small" data-i18n="meta.contrast">Contrast</span>
                                 </div>
                             </div>
                             <div class="ai-analysis-palette" id="aiAnalysisPalette"></div>
@@ -262,36 +268,36 @@
                         
                         <!-- Gender Tabs -->
                         <div class="ai-gender-tabs" id="aiGenderTabs">
-                            <button class="ai-gender-tab active" data-gender="woman">WOMAN</button>
-                            <button class="ai-gender-tab" data-gender="men">MEN</button>
-                            <button class="ai-gender-tab" data-gender="upload">UPLOAD</button>
+                            <button class="ai-gender-tab active" data-gender="woman" data-i18n="tabs.woman">WOMAN</button>
+                            <button class="ai-gender-tab" data-gender="men" data-i18n="tabs.men">MEN</button>
+                            <button class="ai-gender-tab" data-gender="upload" data-i18n="tabs.upload">UPLOAD</button>
                         </div>
 
                         <!-- Category Filters -->
                         <div class="ai-category-filters" id="aiCategoryFilters">
-                            <button class="ai-category-filter active" data-category="top">TOP</button>
-                            <button class="ai-category-filter" data-category="bottom">BOTTOM</button>
+                            <button class="ai-category-filter active" data-category="top" data-i18n="tabs.top">TOP</button>
+                            <button class="ai-category-filter" data-category="bottom" data-i18n="tabs.bottom">BOTTOM</button>
                         </div>
 
                         <!-- AI Outfit Grid -->
                         <div class="ai-outfit-grid" id="aiOutfitGrid">
-                            <div class="loading-message">Loading recommended outfits...</div>
+                            <div class="loading-message" data-i18n="loading.aiOutfits">Loading recommended outfits...</div>
                         </div>
 
                         <!-- Upload Area (shown when UPLOAD tab is active) -->
                         <div class="upload-area" id="aiUploadArea" style="display:none">
                             <div class="upload-dropzone" id="aiUploadDropzone">
                                 <div class="upload-icon">📁</div>
-                                <p class="upload-text">Drag & drop your outfit image here</p>
-                                <p class="upload-or">or</p>
-                                <button class="btn-upload" id="aiUploadButton">Choose File</button>
+                                <p class="upload-text" data-i18n="upload.dragDrop">Drag & drop your outfit image here</p>
+                                <p class="upload-or" data-i18n="upload.or">or</p>
+                                <button class="btn-upload" id="aiUploadButton" data-i18n="upload.chooseFile">Choose File</button>
                                 <input type="file" id="aiUploadInput" accept="image/*" style="display:none">
                             </div>
                         </div>
                         
                         <!-- AI Try On Button -->
                         <button id="aiTryOnSelectedBtn" class="btn btn-primary ai-try-on-btn" disabled>
-                            <span>Try On</span>
+                            <span data-i18n="btn.tryOn">Try On</span>
                         </button>
                     </div>
                     
@@ -305,18 +311,18 @@
 
                 <!-- Step 4: Result -->
                 <div id="step4" class="camera-page" style="display:none">
-                    <h2 class="camera-page-title">Manual Try-On</h2>
+                    <h2 class="camera-page-title" data-i18n="result.title">Manual Try-On</h2>
                     
                     <div class="result-layout">
                         <!-- Left Action Buttons -->
                         <div class="result-actions-left">
-                            <button id="homeBtn" class="action-btn" title="Back to Home">
+                            <button id="homeBtn" class="action-btn" data-i18n-title="tooltip.home">
                                 <img src="assets/home.png" alt="Home">
                             </button>
-                            <button id="rechooseBtn" class="action-btn" title="Re-choose Outfit">
+                            <button id="rechooseBtn" class="action-btn" data-i18n-title="tooltip.rechoose">
                                 <img src="assets/replace.png" alt="Replace">
                             </button>
-                            <button id="downloadBtn" class="action-btn" title="Download Photo">
+                            <button id="downloadBtn" class="action-btn" data-i18n-title="tooltip.download">
                                 <img src="assets/download.png" alt="Download">
                             </button>
                         </div>
@@ -326,7 +332,7 @@
                             <div class="result-card">
                                 <img id="resultImage" alt="Generated AI photo">
                             </div>
-                            <p class="result-message">Your photo is ready!</p>
+                            <p class="result-message" data-i18n="result.ready">Your photo is ready!</p>
                         </div>
                     </div>
                 </div>
@@ -349,14 +355,14 @@
         <div class="modal-backdrop" id="qrBackdrop"></div>
         <div class="qr-modal-content">
             <button class="modal-close" id="closeQrModal">&times;</button>
-            <h3 class="qr-title">Scan to Download</h3>
-            <p class="qr-subtitle">Scan this QR code with your mobile device to download your photo</p>
+            <h3 class="qr-title" data-i18n="qr.title">Scan to Download</h3>
+            <p class="qr-subtitle" data-i18n="qr.subtitle">Scan this QR code with your mobile device to download your photo</p>
             <div id="qrCodeContainer" class="qr-code-container"></div>
-            <button id="directDownloadBtn" class="btn btn-primary" style="margin-top: 20px;">Download Directly</button>
+            <button id="directDownloadBtn" class="btn btn-primary" style="margin-top: 20px;" data-i18n="qr.downloadBtn">Download Directly</button>
         </div>
     </div>
      <script src="config.js"></script>
-
+    <script src="i18n.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="script.js?v=2"></script>
     <script src="ai-guide.js?v=2"></script>

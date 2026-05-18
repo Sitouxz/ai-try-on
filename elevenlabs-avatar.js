@@ -132,7 +132,25 @@
 
         if (!_glCtx[c.id]) {
             const ctx = _initGL(c);
-            if (!ctx) { _ckRaf = requestAnimationFrame(_ckTick); return; }
+            if (!ctx) {
+                // WebGL unavailable — 2D canvas with software chroma-key
+                const ctx2d = c.getContext('2d');
+                if (ctx2d) {
+                    ctx2d.clearRect(0, 0, cw, ch);
+                    ctx2d.drawImage(v, 0, 0, cw, ch);
+                    try {
+                        const imgd = ctx2d.getImageData(0, 0, cw, ch);
+                        const d = imgd.data;
+                        for (let i = 0; i < d.length; i += 4) {
+                            const greenness = d[i+1] - Math.max(d[i], d[i+2]);
+                            if (greenness > 60) d[i+3] = Math.max(0, Math.round(d[i+3] * (1 - (greenness - 60) / 80)));
+                        }
+                        ctx2d.putImageData(imgd, 0, 0);
+                    } catch (_) {}
+                }
+                _ckRaf = requestAnimationFrame(_ckTick);
+                return;
+            }
             _glCtx[c.id] = ctx;
             _glCtx[c.id].gl.viewport(0, 0, cw, ch);
         }
@@ -148,6 +166,8 @@
         try {
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, v);
         } catch (_) {
+            // texImage2D failed — delete gl context so next tick retries
+            delete _glCtx[c.id];
             _ckRaf = requestAnimationFrame(_ckTick);
             return;
         }
@@ -289,6 +309,13 @@
         }
     }
 
+    // ── Language helper ───────────────────────────────────────────────────────
+    function getLanguageForAvatar() {
+        const lang = window.I18N?.currentLang || 'en';
+        // Return appropriate language code for ElevenLabs
+        return lang === 'id' ? 'id' : 'en';
+    }
+
     // ── Session lifecycle ─────────────────────────────────────────────────────
     async function startSession() {
         if (_running || _starting) return;
@@ -316,10 +343,12 @@
         }
 
         try {
+            const lang = getLanguageForAvatar();
             _conversation = await Conversation.startSession({
                 agentId: _agentId,
                 connectionType: 'websocket',
                 clientTools: CLIENT_TOOLS,
+                language: lang,
 
                 onConnect: ({ conversationId }) => {
                     console.info('[el-avatar] Connected. id:', conversationId);
@@ -411,6 +440,9 @@
         const utt = new SpeechSynthesisUtterance(text);
         utt.rate  = 1.0;
         utt.pitch = 1.0;
+        // Use language from i18n if available
+        const lang = window.I18N?.currentLang || 'en';
+        utt.lang = lang === 'id' ? 'id-ID' : 'en-US';
         utt.onstart = () => setAvatarSpeaking(true);
         utt.onend   = () => setAvatarSpeaking(false);
         utt.onerror = () => setAvatarSpeaking(false);

@@ -17,35 +17,71 @@
     // context → sent via sendContextualUpdate (gives the agent the data/instructions)
     // trigger → sent via sendUserMessage right after, forcing the agent to respond
     const STEP_PROMPTS = {
-        camera: {
-            context: 'The user has just arrived at the AI try-on kiosk. Greet them warmly. Tell them to stand in the center of the frame, look straight at the camera, and press the capture button when they are ready. Do NOT capture the photo yet — wait for the user to press the button or say they are ready.',
-            trigger: null,
+        en: {
+            camera: {
+                context: 'The user has just arrived at the AI try-on kiosk. Greet them warmly. Tell them to stand in the center of the frame, look straight at the camera, and press the capture button when they are ready. Do NOT capture the photo yet — wait for the user to press the button or say they are ready.',
+                trigger: null,
+            },
+            analyzing: {
+                context: 'The photo has been captured and is now being analyzed to identify the user\'s skin tone, undertone, and contrast so we can find the best outfit that matches their unique skin tone. Tell the user this and ask them to hold on for just a moment.',
+                trigger: 'My photo was just taken! What happens now?',
+            },
+            aiOutfit: {
+                context: 'The outfit selection screen is now showing. The outfits highlighted with a special badge are AI picks that best suit the user\'s personal skin tone and color season. Tell the user we have highlighted the outfits that best match their skin tone. They can choose our AI recommendation or freely pick any outfit they like.',
+                trigger: 'I can see the outfit selection screen now. Tell me about these recommendations.',
+            },
+            result: {
+                context: 'The virtual try-on result photo is now displayed. Tell the user their look is amazing! Remind them they can download the photo, choose a different outfit, or start a brand new color analysis.',
+                trigger: 'My try-on photo is ready! How does it look?',
+            },
         },
-        // Used only when the user clicks the capture button (agent tool-return handles the voice path)
-        analyzing: {
-            context: 'The photo has been captured and is now being analyzed to identify the user\'s skin tone, undertone, and contrast so we can find the best outfit that matches their unique skin tone. Tell the user this and ask them to hold on for just a moment.',
-            trigger: 'My photo was just taken! What happens now?',
-        },
-        aiOutfit: {
-            context: 'The outfit selection screen is now showing. The outfits highlighted with a special badge are AI picks that best suit the user\'s personal skin tone and color season. Tell the user we have highlighted the outfits that best match their skin tone. They can choose our AI recommendation or freely pick any outfit they like.',
-            trigger: 'I can see the outfit selection screen now. Tell me about these recommendations.',
-        },
-        result: {
-            context: 'The virtual try-on result photo is now displayed. Tell the user their look is amazing! Remind them they can download the photo, choose a different outfit, or start a brand new color analysis.',
-            trigger: 'My try-on photo is ready! How does it look?',
+        id: {
+            camera: {
+                context: 'Pengguna baru saja tiba di kiosk AI try-on. Sapa mereka dengan hangat dalam Bahasa Indonesia. Minta mereka berdiri di tengah frame, lihat lurus ke kamera, dan tekan tombol capture saat siap. Jangan ambil foto dulu — tunggu pengguna menekan tombol atau mengatakan siap.',
+                trigger: null,
+            },
+            analyzing: {
+                context: 'Foto telah diambil dan sedang dianalisis untuk mengidentifikasi warna kulit, undertone, dan kontras pengguna agar bisa menemukan outfit terbaik yang sesuai. Beritahu pengguna dalam Bahasa Indonesia dan minta mereka menunggu sebentar.',
+                trigger: 'Foto saya baru saja diambil! Apa yang terjadi sekarang?',
+            },
+            aiOutfit: {
+                context: 'Layar pemilihan outfit sekarang tampil. Outfit yang diberi tanda khusus adalah pilihan AI yang paling cocok dengan warna kulit dan color season pengguna. Beritahu pengguna dalam Bahasa Indonesia bahwa outfit tersebut sudah disoroti sesuai warna kulit mereka. Mereka bisa memilih rekomendasi AI atau outfit lain yang mereka suka.',
+                trigger: 'Saya bisa melihat layar pemilihan outfit sekarang. Ceritakan tentang rekomendasi ini.',
+            },
+            result: {
+                context: 'Foto hasil virtual try-on sekarang ditampilkan. Katakan kepada pengguna dalam Bahasa Indonesia bahwa penampilan mereka luar biasa! Ingatkan mereka bisa mengunduh foto, memilih outfit berbeda, atau memulai analisis warna baru.',
+                trigger: 'Foto try-on saya sudah siap! Bagaimana penampilannya?',
+            },
         },
     };
 
+    function getStepPrompts() {
+        const lang = window.I18N?.currentLang || 'en';
+        return STEP_PROMPTS[lang] || STEP_PROMPTS.en;
+    }
+
     function buildResultsPrompt(analysis) {
-        const season    = analysis?.season    || 'a unique season';
+        const lang      = window.I18N?.currentLang || 'en';
+        const isId      = lang === 'id';
+        const season    = analysis?.season    || (isId ? 'musim unik' : 'a unique season');
         const undertone = analysis?.undertone || '';
         const skinTone  = analysis?.skinTone  || '';
         const contrast  = analysis?.contrast  || '';
         const summary   = analysis?.summary   || '';
         const top3      = (analysis?.palette || []).slice(0, 3).map(c => c.name).join(', ');
-        const avoid3    = (analysis?.avoidColors || []).slice(0, 2).map(c => c.name).join(' and ');
+        const avoid3    = (analysis?.avoidColors || []).slice(0, 2).map(c => c.name).join(isId ? ' dan ' : ' and ');
 
-        const context = [
+        const context = isId ? [
+            `Hasil analisis warna sudah siap. Umumkan dengan antusias dalam Bahasa Indonesia.`,
+            skinTone  ? `Warna kulit pengguna adalah ${skinTone}.` : '',
+            undertone ? `Undertone mereka adalah ${undertone}.` : '',
+            `Color season personal mereka adalah ${season}.`,
+            contrast  ? `Tingkat kontras mereka adalah ${contrast}.` : '',
+            summary   ? `Konteks gaya: ${summary}` : '',
+            top3      ? `Warna yang paling cocok untuk mereka adalah ${top3} — sebutkan semua ini.` : '',
+            avoid3    ? `Mereka sebaiknya menghindari ${avoid3} karena warna tersebut kurang cocok.` : '',
+            `Akhiri dengan meminta mereka klik tombol "Coba Outfit" untuk menjelajahi outfit yang sesuai warna kulit mereka.`,
+        ].filter(Boolean).join(' ') : [
             `The color analysis results are ready. Announce them enthusiastically.`,
             skinTone  ? `The user's skin tone is ${skinTone}.` : '',
             undertone ? `Their undertone is ${undertone}.` : '',
@@ -59,12 +95,16 @@
 
         return {
             context,
-            trigger: 'My color analysis just finished! What are my results?',
+            trigger: isId ? 'Analisis warna saya selesai! Apa hasilnya?' : 'My color analysis just finished! What are my results?',
         };
     }
 
     function avatarSpeak(step, analysis = null) {
-        const prompt = step === 'results' ? buildResultsPrompt(analysis) : STEP_PROMPTS[step];
+        // Only speak in AI mode - check the app mode
+        const app = window.photoboothApp;
+        if (!app || app.mode !== 'ai') return;
+
+        const prompt = step === 'results' ? buildResultsPrompt(analysis) : getStepPrompts()[step];
         if (!prompt) return;
         // speak() queues the prompt if session not yet running; latest wins
         window.elevenLabsAvatar?.speak(prompt.context, prompt.trigger);
@@ -221,95 +261,68 @@
 
     // ── Rendering ─────────────────────────────────────────────────────────
     proto.renderAiResults = function (analysis) {
-        const set = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = val ?? '—';
-        };
-
+        // Store analysis for later use
+        this.lastAnalysis = analysis;
+        
+        // Skip the color analysis results screen and go directly to outfit selection
+        // with color recommendation dialog shown
         const step1 = document.getElementById('step1');
         if (step1) step1.style.display = 'none';
-        const stepAi = document.getElementById('stepAi');
-        if (stepAi) stepAi.style.display = 'block';
-
-        const personImg = document.getElementById('aiPersonThumb');
-        if (personImg && this.capturedDataUrl) personImg.src = this.capturedDataUrl;
-
-        set('aiSeason', analysis.season);
-        set('aiUndertone', analysis.undertone);
-        set('aiContrast', analysis.contrast);
-        set('aiSummary', analysis.summary);
-
-        // Palette swatches
-        const palette = document.getElementById('aiPalette');
-        if (palette) {
-            palette.innerHTML = (analysis.palette || [])
-                .map(
-                    (c) => `
-                <div class="ai-swatch" title="${escapeAttr(c.note || '')}">
-                    <div class="ai-swatch-color" style="background:${escapeAttr(c.hex)}"></div>
-                    <div class="ai-swatch-meta">
-                        <div class="ai-swatch-name">${escapeHtml(c.name || '')}</div>
-                        <div class="ai-swatch-hex">${escapeHtml(c.hex || '')}</div>
+        
+        // Go directly to AI outfit selection step
+        this.showAiOutfitSelection();
+        
+        // Show color recommendation dialog
+        this.showColorRecommendationDialog(analysis);
+    };
+    
+    // Show color recommendation dialog on outfit selection screen
+    proto.showColorRecommendationDialog = function (analysis) {
+        // Remove any existing dialog
+        const existingDialog = document.getElementById('colorRecDialog');
+        if (existingDialog) existingDialog.remove();
+        
+        const i18n = window.I18N;
+        const t = i18n ? i18n.t.bind(i18n) : (k) => k;
+        
+        const dialog = document.createElement('div');
+        dialog.id = 'colorRecDialog';
+        dialog.className = 'color-rec-dialog';
+        dialog.innerHTML = `
+            <div class="color-rec-backdrop"></div>
+            <div class="color-rec-content">
+                <button class="color-rec-close" id="closeColorRec">&times;</button>
+                <h3 class="color-rec-title">${t('colorRec.title')}</h3>
+                <div class="color-rec-meta">
+                    <div class="color-rec-item">
+                        <span class="color-rec-label">${t('meta.season')}</span>
+                        <span class="color-rec-value">${escapeHtml(analysis.season || '—')}</span>
                     </div>
-                </div>`
-                )
-                .join('');
-        }
-
-        // Avoid colors
-        const avoid = analysis.avoidColors || [];
-        const avoidSection = document.getElementById('aiAvoidSection');
-        const avoidEl = document.getElementById('aiAvoidColors');
-        if (avoidSection && avoidEl) {
-            if (avoid.length) {
-                avoidSection.style.display = 'block';
-                avoidEl.innerHTML = avoid
-                    .map(
-                        (c) => `
-                    <div class="ai-swatch ai-swatch-sm">
-                        <div class="ai-swatch-color" style="background:${escapeAttr(c.hex)}"></div>
-                        <div class="ai-swatch-meta">
-                            <div class="ai-swatch-name">${escapeHtml(c.name || '')}</div>
-                            <div class="ai-swatch-hex">${escapeHtml(c.hex || '')}</div>
-                        </div>
-                    </div>`
-                    )
-                    .join('');
-            } else {
-                avoidSection.style.display = 'none';
-            }
-        }
-
-        // Outfits
-        const outfits = document.getElementById('aiOutfits');
-        if (outfits) {
-            outfits.innerHTML = (analysis.outfits || [])
-                .map(
-                    (o) => `
-                <li class="ai-recommend-item">
-                    <div class="ai-recommend-title">${escapeHtml(o.title || '')}</div>
-                    <div class="ai-recommend-desc">${escapeHtml(o.description || '')}</div>
-                    ${o.occasion ? `<div class="ai-recommend-tag">${escapeHtml(o.occasion)}</div>` : ''}
-                </li>`
-                )
-                .join('');
-        }
-
-        // Accessories
-        const accessories = document.getElementById('aiAccessories');
-        if (accessories) {
-            accessories.innerHTML = (analysis.accessories || [])
-                .map(
-                    (a) => `
-                <li class="ai-recommend-item">
-                    <div class="ai-recommend-title">${escapeHtml(a.name || '')}</div>
-                    <div class="ai-recommend-desc">${escapeHtml(a.description || '')}</div>
-                </li>`
-                )
-                .join('');
-        }
-
-        // avatarSpeak('results') is called in startAiAnalysis before this renders.
+                    <div class="color-rec-item">
+                        <span class="color-rec-label">${t('meta.undertone')}</span>
+                        <span class="color-rec-value">${escapeHtml(analysis.undertone || '—')}</span>
+                    </div>
+                    <div class="color-rec-item">
+                        <span class="color-rec-label">${t('meta.contrast')}</span>
+                        <span class="color-rec-value">${escapeHtml(analysis.contrast || '—')}</span>
+                    </div>
+                </div>
+                <div class="color-rec-palette">
+                    ${(analysis.palette || []).slice(0, 6).map(c => `
+                        <div class="color-rec-swatch" style="background: ${escapeAttr(c.hex)}" title="${escapeAttr(c.name || '')}"></div>
+                    `).join('')}
+                </div>
+                <p class="color-rec-summary">${escapeHtml(analysis.summary || '')}</p>
+                <button class="btn btn-primary color-rec-btn" id="gotItBtn">${t('colorRec.gotIt')}</button>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Add event listeners
+        document.getElementById('closeColorRec')?.addEventListener('click', () => dialog.remove());
+        document.getElementById('gotItBtn')?.addEventListener('click', () => dialog.remove());
+        document.querySelector('.color-rec-backdrop')?.addEventListener('click', () => dialog.remove());
     };
 
     proto.showAiError = function (message) {
@@ -652,6 +665,10 @@
     // ── Hand-off to try-on ────────────────────────────────────────────────
     proto.handoffToTryOn = function () {
         this.showAiOutfitSelection();
+        // Show color recommendation dialog if we have analysis data
+        if (this.lastAnalysis) {
+            this.showColorRecommendationDialog(this.lastAnalysis);
+        }
     };
 
     // ── Wire stepAi buttons ───────────────────────────────────────────────

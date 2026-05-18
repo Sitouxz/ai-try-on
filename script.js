@@ -33,6 +33,7 @@ class PhotoboothApp {
         this.stepIndicator = document.getElementById('stepIndicator');
         this.countdownOverlay = document.getElementById('countdownOverlay');
         this.countdownNumber = document.getElementById('countdownNumber');
+        this.captureProcessing = document.getElementById('captureProcessing');
         this.loadingOverlay = document.getElementById('loadingOverlay');
         this.processingImg = document.getElementById('processingImg');
         
@@ -111,7 +112,7 @@ class PhotoboothApp {
         // Reset camera UI for next visit
         this.cameraWrapper.style.display = 'block';
         this.capturedPreview.style.display = 'none';
-        this.captureBtn.style.display = 'block';
+        this.captureBtn.style.display = 'flex';
         this.cameraHint.style.display = 'block';
         this.countdownOverlay.style.display = 'none';
         if (this.cameraAfterControls) this.cameraAfterControls.style.display = 'none';
@@ -124,6 +125,7 @@ class PhotoboothApp {
         });
         if (this.step1) this.step1.style.display = 'block';
         if (this.outfitSidebar) this.outfitSidebar.style.display = 'none';
+        if (window.showOutfitToggle) window.showOutfitToggle(false);
     }
 
     initEventListeners() {
@@ -220,34 +222,50 @@ class PhotoboothApp {
         }
 
         this.countdownOverlay.style.display = 'none';
+        this.captureProcessing.style.display = 'flex';
 
         const video = this.cameraVideo;
         const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
+        // Set canvas to 1080x1920px as required
+        const targetWidth = 1080;
+        const targetHeight = 1920;
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
 
         const ctx = canvas.getContext('2d');
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0);
+        // Draw video centered and cover the canvas
+        const scale = Math.max(targetWidth / video.videoWidth, targetHeight / video.videoHeight);
+        const scaledWidth = video.videoWidth * scale;
+        const scaledHeight = video.videoHeight * scale;
+        const x = (targetWidth - scaledWidth) / 2;
+        const y = (targetHeight - scaledHeight) / 2;
+        ctx.drawImage(video, x, y, scaledWidth, scaledHeight);
 
         this.capturedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
         this.capturedImg.src = this.capturedDataUrl;
 
-        canvas.toBlob((blob) => { this.capturedBlob = blob; }, 'image/jpeg', 0.92);
+        await new Promise(resolve => canvas.toBlob((blob) => { 
+            this.capturedBlob = blob; 
+            resolve();
+        }, 'image/jpeg', 0.92));
 
+        this.captureProcessing.style.display = 'none';
         this.stopCamera();
         this.cameraWrapper.style.display = 'none';
         this.capturedPreview.style.display = 'block';
         this.captureBtn.style.display = 'none';
-        this.retakeBtn.style.display = 'block';
+        this.retakeBtn.style.display = 'flex';
         
         // Branch on mode: AI Guide runs color analysis, Manual shows the outfit sidebar.
         if (this.mode === 'ai') {
             this.startAiAnalysis();
         } else {
             this.outfitSidebar.style.display = 'flex';
+
             this.loadSidebarOutfits();
+            if (window.showOutfitToggle) window.showOutfitToggle(true);
         }
     }
 
@@ -259,11 +277,12 @@ class PhotoboothApp {
 
         this.capturedPreview.style.display = 'none';
         this.cameraWrapper.style.display = 'block';
-        this.captureBtn.style.display = 'block';
+        this.captureBtn.style.display = 'flex';
         this.retakeBtn.style.display = 'none';
         this.cameraHint.style.display = 'block';
         this.countdownOverlay.style.display = 'none';
         this.outfitSidebar.style.display = 'none';
+        if (window.showOutfitToggle) window.showOutfitToggle(false);
         this.tryOnBtn.disabled = true;
         if (this.cameraAfterControls) this.cameraAfterControls.style.display = 'none';
 
@@ -294,7 +313,7 @@ class PhotoboothApp {
         } else {
             this.cameraWrapper.style.display = 'block';
             this.capturedPreview.style.display = 'none';
-            this.captureBtn.style.display = 'block';
+            this.captureBtn.style.display = 'flex';
             if (this.cameraAfterControls) this.cameraAfterControls.style.display = 'none';
             this.startCamera();
         }
@@ -328,7 +347,8 @@ class PhotoboothApp {
 
     async loadOutfitAssets() {
         try {
-            this.outfitGrid.innerHTML = '<div class="loading-message">Loading outfits...</div>';
+            const t = window.I18N?.t || ((k) => k);
+            this.outfitGrid.innerHTML = `<div class="loading-message">${t('loading.outfits')}</div>`;
             const response = await fetch('assets/outfits.json');
             const outfits = await response.json();
 
@@ -341,11 +361,13 @@ class PhotoboothApp {
                 `).join('');
                 this.outfitGrid.innerHTML = `<div class="outfit-options">${html}</div>`;
             } else {
-                this.outfitGrid.innerHTML = '<div class="error-message">No outfits available.</div>';
+                const t = window.I18N?.t || ((k) => k);
+                this.outfitGrid.innerHTML = `<div class="error-message">${t('error.noOutfits')}</div>`;
             }
         } catch (err) {
             console.error('Error loading outfits:', err);
-            this.outfitGrid.innerHTML = '<div class="error-message">Error loading outfits.</div>';
+            const t = window.I18N?.t || ((k) => k);
+            this.outfitGrid.innerHTML = `<div class="error-message">${t('error.loadingOutfits')}</div>`;
         }
     }
 
@@ -366,6 +388,7 @@ class PhotoboothApp {
 
     async fetchAndRenderOutfits() {
         try {
+            const t = window.I18N?.t || ((k) => k);
             if (this.currentGender === 'upload') {
                 this.categoryFilters.style.display = 'none';
                 this.sidebarOutfitGrid.style.display = 'none';
@@ -376,7 +399,7 @@ class PhotoboothApp {
             this.categoryFilters.style.display = 'flex';
             this.sidebarOutfitGrid.style.display = 'grid';
             this.uploadArea.style.display = 'none';
-            this.sidebarOutfitGrid.innerHTML = '<div class="loading-message">Loading outfits...</div>';
+            this.sidebarOutfitGrid.innerHTML = `<div class="loading-message">${t('loading.outfits')}</div>`;
 
             const folderName = this.currentGender;
             const folderPath = `assets/${folderName}/${this.currentCategory}/`;
@@ -385,11 +408,13 @@ class PhotoboothApp {
             if (outfits.length > 0) {
                 this.renderSidebarOutfits(outfits);
             } else {
-                this.sidebarOutfitGrid.innerHTML = '<div class="loading-message">No outfits available in this category.</div>';
+                const t = window.I18N?.t || ((k) => k);
+                this.sidebarOutfitGrid.innerHTML = `<div class="loading-message">${t('error.noOutfits')}</div>`;
             }
         } catch (err) {
             console.error('Error loading outfits:', err);
-            this.sidebarOutfitGrid.innerHTML = '<div class="error-message">Error loading outfits.</div>';
+            const t = window.I18N?.t || ((k) => k);
+            this.sidebarOutfitGrid.innerHTML = `<div class="error-message">${t('error.loadingOutfits')}</div>`;
         }
     }
 
@@ -520,6 +545,7 @@ class PhotoboothApp {
         // Show loading overlay
         this.loadingOverlay.style.display = 'flex';
         this.outfitSidebar.style.display = 'none';
+        if (window.showOutfitToggle) window.showOutfitToggle(false);
         this.retakeBtn.style.display = 'none';
         
         await this.generatePhoto();
@@ -714,9 +740,11 @@ class PhotoboothApp {
         this.capturedPreview.style.display = 'block';
         this.cameraWrapper.style.display = 'none';
         this.captureBtn.style.display = 'none';
-        this.retakeBtn.style.display = 'block';
+        this.retakeBtn.style.display = 'flex';
         this.outfitSidebar.style.display = 'flex';
+        this.outfitSidebar.classList.remove('collapsed');
         this.loadSidebarOutfits();
+        if (window.showOutfitToggle) window.showOutfitToggle(true);
     }
 
     hideFullscreen() {
@@ -743,4 +771,27 @@ document.addEventListener('DOMContentLoaded', () => {
         requestFullscreen();
         document.removeEventListener('click', onFirstClick);
     }, { once: true });
+    
+    // Listen for language changes to refresh outfit grids
+    window.addEventListener('languageChanged', () => {
+        // Refresh loading messages if outfit grids are visible
+        const sidebar = document.getElementById('outfitSidebar');
+        const aiSidebar = document.getElementById('aiOutfitSidebar');
+        
+        if (sidebar && sidebar.style.display !== 'none') {
+            const t = window.I18N?.t || ((k) => k);
+            const grid = document.getElementById('sidebarOutfitGrid');
+            if (grid && grid.querySelector('.loading-message')) {
+                grid.innerHTML = `<div class="loading-message">${t('loading.outfits')}</div>`;
+            }
+        }
+        
+        if (aiSidebar && aiSidebar.style.display !== 'none') {
+            const t = window.I18N?.t || ((k) => k);
+            const grid = document.getElementById('aiOutfitGrid');
+            if (grid && grid.querySelector('.loading-message')) {
+                grid.innerHTML = `<div class="loading-message">${t('loading.aiOutfits')}</div>`;
+            }
+        }
+    });
 });

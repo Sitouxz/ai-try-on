@@ -119,8 +119,18 @@
         }
     };
 
+    function restoreAvatar() {
+        document.body.classList.remove('body--outfit-selection');
+        const av = document.getElementById('aiAvatarContainer');
+        if (av && av.dataset.outfitHidden) {
+            av.style.display = '';
+            delete av.dataset.outfitHidden;
+        }
+    }
+
     const _origReturnToLanding = proto.returnToLanding;
     proto.returnToLanding = function () {
+        restoreAvatar();
         _origReturnToLanding.call(this);
     };
 
@@ -326,30 +336,32 @@
     };
 
     proto.showAiError = function (message) {
-        const stepAi = document.getElementById('stepAi');
         const step1 = document.getElementById('step1');
         if (step1) step1.style.display = 'none';
-        if (!stepAi) return;
-        stepAi.style.display = 'block';
-        stepAi.innerHTML = `
-            <h2 class="camera-page-title p-page-title">Color Analysis</h2>
-            <div class="ai-error-card">
-                <div class="ai-error-icon">!</div>
-                <p class="ai-error-msg">${escapeHtml(message)}</p>
-                <div class="ai-error-actions">
-                    <button class="btn btn-ghost" id="aiErrorHome">Home</button>
-                    <button class="btn btn-primary" id="aiErrorRetry">Retake</button>
-                </div>
-            </div>`;
-        document
-            .getElementById('aiErrorHome')
-            ?.addEventListener('click', () => this.returnToLanding());
-        document
-            .getElementById('aiErrorRetry')
-            ?.addEventListener('click', () => {
-                this.returnToLanding();
-                setTimeout(() => this.showApp('ai'), 50);
-            });
+
+        // Skip Color Analysis page — go directly to outfit selection
+        this.showAiOutfitSelection();
+
+        // Show dismissable error banner inside outfit sidebar
+        const existing = document.getElementById('aiErrorBanner');
+        if (existing) existing.remove();
+
+        const banner = document.createElement('div');
+        banner.id = 'aiErrorBanner';
+        banner.className = 'ai-error-banner';
+        banner.innerHTML = `
+            <span class="ai-error-banner-msg">${escapeHtml(message)}</span>
+            <button class="ai-error-banner-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+
+        const outfitSidebar = document.getElementById('aiOutfitSidebar');
+        if (outfitSidebar) {
+            outfitSidebar.insertAdjacentElement('afterbegin', banner);
+        } else {
+            document.body.appendChild(banner);
+        }
+
+        setTimeout(() => banner.remove(), 6000);
     };
 
     // ── AI Outfit Selection Flow ──────────────────────────────────────────
@@ -372,9 +384,17 @@
     proto.showAiOutfitSelection = function () {
         const stepAi = document.getElementById('stepAi');
         const stepAiOutfit = document.getElementById('stepAiOutfit');
-        
+
         if (stepAi) stepAi.style.display = 'none';
         if (stepAiOutfit) stepAiOutfit.style.display = 'block';
+
+        document.body.classList.add('body--outfit-selection');
+
+        // On non-desktop viewports, hide avatar directly to prevent sidebar overlap
+        if (window.innerWidth < 1100) {
+            const av = document.getElementById('aiAvatarContainer');
+            if (av) { av.style.display = 'none'; av.dataset.outfitHidden = '1'; }
+        }
 
         // Set person photo
         const personImg = document.getElementById('aiOutfitPersonImg');
@@ -489,6 +509,16 @@
                 document.querySelectorAll('.ai-category-filter').forEach(f => f.classList.remove('active'));
                 e.target.classList.add('active');
                 this.aiOutfitState.category = e.target.dataset.category;
+                this.loadAiOutfitGrid();
+            });
+        });
+
+        // Season tabs (Spring / Summer / Autumn / Winter)
+        document.querySelectorAll('.ai-season-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.ai-season-tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                this.aiOutfitState.season = e.target.dataset.season;
                 this.loadAiOutfitGrid();
             });
         });
@@ -652,6 +682,9 @@
 
     proto.handleAiTryOn = async function () {
         if (!this.capturedBlob || !this.aiOutfitState.selectedOutfitUrl) return;
+
+        // Leave outfit selection — avatar can return for result screen
+        restoreAvatar();
 
         // Hide sidebar and show loading
         const sidebar = document.getElementById('aiOutfitSidebar');

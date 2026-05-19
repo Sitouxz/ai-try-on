@@ -161,14 +161,9 @@
             </button>
         </div>
 
-        <!-- Outfit sidebar toggle (floating, always visible when sidebar exists) -->
-        <button class="p-sidebar-toggle" id="sidebarToggle" aria-label="Toggle outfit panel" style="display:none">
-            <span class="p-sidebar-toggle-icon">▼</span>
-            <span class="p-sidebar-toggle-label" data-i18n="sidebar.outfits">Outfits</span>
-        </button>
-
         <!-- Outfit sidebar (manual mode — bottom sheet) -->
         <div class="p-outfit-sidebar" id="outfitSidebar" style="display:none">
+            <button class="p-sidebar-handle" id="sidebarToggle" aria-label="Toggle outfit panel"></button>
             <div class="p-sidebar-collapsible" id="sidebarCollapsible">
             <div class="p-sidebar-top">
                 <!-- Gender tabs -->
@@ -313,6 +308,9 @@
 
         <!-- AI outfit sidebar (bottom sheet) -->
         <div class="p-outfit-sidebar p-ai-outfit-sidebar" id="aiOutfitSidebar">
+            <button class="p-ai-sidebar-handle" id="aiSidebarHandle" aria-label="Toggle outfit panel">
+                <span class="p-ai-handle-grip"></span>
+            </button>
             <div class="p-sidebar-section">
                 <p class="p-analysis-label" data-i18n="aiOutfit.yourColorAnalysis">Your Color Analysis</p>
                 <div class="p-analysis-meta" id="aiAnalysisMeta">
@@ -335,12 +333,6 @@
                 <div class="p-sidebar-tabs" id="aiGenderTabs">
                     <button class="ai-gender-tab active" data-gender="woman" data-i18n="tabs.woman">WOMAN</button>
                     <button class="ai-gender-tab" data-gender="men" data-i18n="tabs.men">MEN</button>
-                </div>
-                <div class="p-season-tabs" id="aiSeasonTabs">
-                    <button class="ai-season-tab active" data-season="spring">Spring</button>
-                    <button class="ai-season-tab" data-season="summer">Summer</button>
-                    <button class="ai-season-tab" data-season="autumn">Autumn</button>
-                    <button class="ai-season-tab" data-season="winter">Winter</button>
                 </div>
                 <div class="p-category-row">
                     <button class="ai-category-filter active" data-category="top" data-i18n="tabs.top">TOP</button>
@@ -419,30 +411,34 @@
 (function() {
     var toggle = document.getElementById('sidebarToggle');
     var sidebar = document.getElementById('outfitSidebar');
-    var icon = toggle ? toggle.querySelector('.p-sidebar-toggle-icon') : null;
+    var collapsible = document.getElementById('sidebarCollapsible');
 
     var sidebarOpen = true;
 
-    function updateToggle() {
-        icon.textContent = sidebarOpen ? '▼' : '▲';
-        toggle.classList.toggle('sidebar-collapsed', !sidebarOpen);
-    }
-
-    if (toggle && sidebar) {
+    if (toggle && sidebar && collapsible) {
         toggle.addEventListener('click', function() {
             sidebarOpen = !sidebarOpen;
-            sidebar.style.display = sidebarOpen ? 'flex' : 'none';
-            updateToggle();
+            collapsible.style.display = sidebarOpen ? '' : 'none';
         });
     }
 
     window.showOutfitToggle = function(visible) {
-        toggle.style.display = visible ? 'flex' : 'none';
+        sidebar.style.display = visible ? 'flex' : 'none';
         if (visible) {
             sidebarOpen = true;
-            updateToggle();
+            if (collapsible) collapsible.style.display = '';
         }
     };
+})();
+
+// AI outfit sidebar collapse/expand handle
+(function() {
+    var handle = document.getElementById('aiSidebarHandle');
+    var sidebar = document.getElementById('aiOutfitSidebar');
+    if (!handle || !sidebar) return;
+    handle.addEventListener('click', function() {
+        sidebar.classList.toggle('ai-sidebar-collapsed');
+    });
 })();
 </script>
 </body>

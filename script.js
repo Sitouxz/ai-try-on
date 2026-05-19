@@ -347,7 +347,7 @@ class PhotoboothApp {
 
     async loadOutfitAssets() {
         try {
-            const t = window.I18N?.t || ((k) => k);
+            const t = window.I18N ? (k) => window.I18N.t(k) : (k) => k;
             this.outfitGrid.innerHTML = `<div class="loading-message">${t('loading.outfits')}</div>`;
             const response = await fetch('assets/outfits.json');
             const outfits = await response.json();
@@ -361,12 +361,12 @@ class PhotoboothApp {
                 `).join('');
                 this.outfitGrid.innerHTML = `<div class="outfit-options">${html}</div>`;
             } else {
-                const t = window.I18N?.t || ((k) => k);
+                const t = window.I18N ? (k) => window.I18N.t(k) : (k) => k;
                 this.outfitGrid.innerHTML = `<div class="error-message">${t('error.noOutfits')}</div>`;
             }
         } catch (err) {
             console.error('Error loading outfits:', err);
-            const t = window.I18N?.t || ((k) => k);
+            const t = window.I18N ? (k) => window.I18N.t(k) : (k) => k;
             this.outfitGrid.innerHTML = `<div class="error-message">${t('error.loadingOutfits')}</div>`;
         }
     }
@@ -388,7 +388,7 @@ class PhotoboothApp {
 
     async fetchAndRenderOutfits() {
         try {
-            const t = window.I18N?.t || ((k) => k);
+            const t = window.I18N ? (k) => window.I18N.t(k) : (k) => k;
             if (this.currentGender === 'upload') {
                 this.categoryFilters.style.display = 'none';
                 this.sidebarOutfitGrid.style.display = 'none';
@@ -408,12 +408,12 @@ class PhotoboothApp {
             if (outfits.length > 0) {
                 this.renderSidebarOutfits(outfits);
             } else {
-                const t = window.I18N?.t || ((k) => k);
+                const t = window.I18N ? (k) => window.I18N.t(k) : (k) => k;
                 this.sidebarOutfitGrid.innerHTML = `<div class="loading-message">${t('error.noOutfits')}</div>`;
             }
         } catch (err) {
             console.error('Error loading outfits:', err);
-            const t = window.I18N?.t || ((k) => k);
+            const t = window.I18N ? (k) => window.I18N.t(k) : (k) => k;
             this.sidebarOutfitGrid.innerHTML = `<div class="error-message">${t('error.loadingOutfits')}</div>`;
         }
     }
@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const aiSidebar = document.getElementById('aiOutfitSidebar');
         
         if (sidebar && sidebar.style.display !== 'none') {
-            const t = window.I18N?.t || ((k) => k);
+            const t = window.I18N ? (k) => window.I18N.t(k) : (k) => k;
             const grid = document.getElementById('sidebarOutfitGrid');
             if (grid && grid.querySelector('.loading-message')) {
                 grid.innerHTML = `<div class="loading-message">${t('loading.outfits')}</div>`;
@@ -787,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (aiSidebar && aiSidebar.style.display !== 'none') {
-            const t = window.I18N?.t || ((k) => k);
+            const t = window.I18N ? (k) => window.I18N.t(k) : (k) => k;
             const grid = document.getElementById('aiOutfitGrid');
             if (grid && grid.querySelector('.loading-message')) {
                 grid.innerHTML = `<div class="loading-message">${t('loading.aiOutfits')}</div>`;
